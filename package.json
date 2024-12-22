@@ -1,0 +1,52 @@
+{
+    "name": "circuit-sketcher-core",
+    "version": "1.0.0",
+    "main": "dist/main.js",
+    "types": "dist/main.d.ts",
+    "sideEffects": true,
+    "description": "The core for drawing circuits on a canvas.",
+    "scripts": {
+        "copy:style-vars": "cpx src/components/variables.scss dist/",
+        "copy": "npm run copy:style-vars",
+        "build": "webpack --stats-error-details && npm run copy",
+        "lint": "eslint ."
+    },
+    "keywords": [],
+    "author": "Code Forge Temple",
+    "license": "GPL",
+    "dependencies": {
+        "draw2d": "git+https://github.com/code-forge-temple/draw2d.git",
+        "jquery": "^3.7.1",
+        "jquery-contextmenu": "^2.9.2",
+        "jquery-ui": "^1.14.1"
+    },
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.17.0",
+        "@types/jquery": "^3.5.32",
+        "@types/react": ">=18.0.0",
+        "@types/react-dom": ">=18.0.0",
+        "@typescript-eslint/eslint-plugin": "^8.18.0",
+        "@typescript-eslint/parser": "^8.18.0",
+        "cpx2": "^8.0.0",
+        "css-loader": "^7.1.2",
+        "eslint": "^9.17.0",
+        "eslint-plugin-react-hooks": "^5.1.0",
+        "eslint-plugin-react-refresh": "^0.4.16",
+        "postcss": "^8.4.49",
+        "postcss-loader": "^8.1.1",
+        "postcss-url": "^10.1.3",
+        "raw-loader": "^4.0.2",
+        "sass": "^1.83.0",
+        "sass-loader": "^16.0.4",
+        "style-loader": "^4.0.0",
+        "ts-loader": "^9.5.1",
+        "typescript": "^5.7.2",
+        "typescript-eslint": "^8.18.0",
+        "webpack": "^5.97.1",
+        "webpack-cli": "^5.1.4"
+    }
+}

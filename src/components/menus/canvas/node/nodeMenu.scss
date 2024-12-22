@@ -1,0 +1,51 @@
+.context-menu-icon-add-port>span::before {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-image: url('../../../../assets/data-transfer-both.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    position: absolute;
+    left: 5px;
+}
+
+.context-menu-icon-change-image>span::before {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-image: url('../../../../assets/media-image-plus.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    position: absolute;
+    left: 5px;
+}
+
+.context-menu-icon-save-node-to-library>span::before {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-image: url('../../../../assets/floppy-disk-blue.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    position: absolute;
+    left: 5px;
+}
+
+.context-menu-icon-remove-node>span::before {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-image: url('../../../../assets/trash.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    position: absolute;
+    left: 5px;
+}

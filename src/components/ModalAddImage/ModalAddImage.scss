@@ -1,0 +1,89 @@
+@use "../variables.scss" as vars;
+
+.circuit-sketcher-core.modal-show {
+    opacity: 100% !important;
+    visibility: visible !important;
+    pointer-events: unset !important;
+}
+
+.circuit-sketcher-core.modal-window {
+    position: fixed;    
+    background-color: rgb(0 0 0 / 25%);
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 999;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+
+    color: vars.$circuit-sketcher-text-color-dark-background;    
+
+    &:target {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    >div {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 1em;
+        background: #262626;
+        border-radius: .5rem;
+
+        &:not(:last-of-type) {
+            margin-bottom: 15px;
+        }
+
+        .modal-content {
+            display: flex;
+            margin-top: 40px;
+
+            .btn {
+                cursor: pointer;
+                background-color: vars.$circuit-sketcher-button-background-color;
+                color: vars.$circuit-sketcher-text-color-dark-background;
+
+                &:hover {
+                    color: darken(vars.$circuit-sketcher-text-color-dark-background, 20%);
+                }
+            }
+
+            .selected-file {
+                margin: 0 50px 0 10px;
+                color: vars.$circuit-sketcher-text-color-secondary-dark-background;
+            }
+        }
+    }
+
+    header {
+        font-weight: bold;
+    }
+
+    h1 {
+        font-size: 150%;
+        margin: 0 0 15px;
+    }
+}
+
+.circuit-sketcher-core .modal-close {
+    color: vars.$circuit-sketcher-text-color-secondary-dark-background;
+    line-height: 50px;
+    font-size: 80%;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 0;
+    width: 70px;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+        color: darken(vars.$circuit-sketcher-text-color-secondary-dark-background, 20%);
+    }
+}
