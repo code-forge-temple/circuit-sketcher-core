@@ -15,9 +15,9 @@ export abstract class DraggableCanvas {
     protected abstract onDragFinish(): Promise<void>;
 
     protected addDragEventListeners () {
-        this.canvasElement.addEventListener('mousedown', this.onMouseDown);
-        this.canvasElement.addEventListener('mousemove', this.onMouseMove);
-        this.canvasElement.addEventListener('mouseup', this.onMouseUp);
+        this.canvasElement.addEventListener('mousedown', this.onMouseDown, {passive: true});
+        this.canvasElement.addEventListener('mousemove', this.onMouseMove, {passive: true});
+        this.canvasElement.addEventListener('mouseup', this.onMouseUp, {passive: true});
     }
 
     protected removeDragEventListeners () {
