@@ -5,6 +5,8 @@
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
 
+import draw2d from "draw2d";
+
 export const toCapitalCase = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -76,3 +78,24 @@ export const isWithinVirtualBoundary = (figure: any, OFFSET: number, coords: Coo
         boundaryBottomRight
     }
 }
+
+const router = new draw2d.layout.connection.InteractiveManhattanConnectionRouter();
+
+router.abortRoutingOnFirstVertexNode = false;
+
+export const createConnection = function (sourcePort:any, targetPort:any) {
+    const connection = new draw2d.Connection({
+        outlineColor: "#00A8F0",
+        outlineStroke: 1,
+        router,
+        stroke: 1,
+        radius: 2,
+    });
+
+    if (sourcePort) {
+        connection.setSource(sourcePort);
+        connection.setTarget(targetPort);
+    }
+
+    return connection;
+};

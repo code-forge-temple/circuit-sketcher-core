@@ -20,7 +20,7 @@ import "jquery-contextmenu";
 import {canvasMenu} from "../menus/canvas/canvasMenu";
 import {CustomBlock} from "../customDefinitions/customBlock";
 import "../menus/jquery-contextmenu.scss";
-import {Coords, labelBasicProps} from "../utils";
+import {Coords, createConnection, labelBasicProps} from "../utils";
 import draw2d from "draw2d";
 import {LocalStorageManager} from "../LocalStorageManager";
 import {DummyCommand} from "../customDefinitions/customCommands";
@@ -116,11 +116,6 @@ export class CanvasManager extends ObserverCanvas {
     }
 
     private setup = () => {
-        const router = new draw2d.layout.connection.InteractiveManhattanConnectionRouter();
-
-        router.abortRoutingOnFirstVertexNode = false;
-
-        // Add context menu to the canvas
         this.canvas.on("contextmenu", (_emitter: any, {x, y}: Coords) => {
             if (this.canvas.currentHoverFigure) return;
 
@@ -130,38 +125,17 @@ export class CanvasManager extends ObserverCanvas {
 
             this.openMenu(x - rect.left + window.scrollX, y - rect.top + window.scrollY);
 
-            return false; // Prevent default context menu
+            return false;
         });
-
-        // Function to create a connection
-        const createConnection = function (sourcePort:any, targetPort:any) {
-            const connection = new draw2d.Connection({
-                outlineColor: "#00A8F0",
-                outlineStroke: 1,
-                //color: "#000000",
-                router: router,
-                stroke: 1,
-                radius: 2,
-            });
-
-            if (sourcePort) {
-                connection.setSource(sourcePort);
-                connection.setTarget(targetPort);
-            }
-
-            return connection;
-        };
 
         this.canvas.installEditPolicy(
             new draw2d.policy.connection.ComposedConnectionCreatePolicy([
-                // create a connection via Drag&Drop of ports
                 new draw2d.policy.connection.DragConnectionCreatePolicy({
                     createConnection: createConnection,
                 }),
             ])
         );
         this.canvas.installEditPolicy(new draw2d.policy.canvas.SingleSelectionPolicy());
-
         this.canvas.installEditPolicy(new draw2d.policy.canvas.SnapToGeometryEditPolicy());
         this.canvas.installEditPolicy(new draw2d.policy.canvas.SnapToInBetweenEditPolicy());
         this.canvas.installEditPolicy(new draw2d.policy.canvas.SnapToCenterEditPolicy());

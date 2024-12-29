@@ -26,3 +26,4 @@ export declare const isWithinVirtualBoundary: (figure: any, OFFSET: number, coor
         y: any;
     };
 };
+export declare const createConnection: (sourcePort: any, targetPort: any) => any;

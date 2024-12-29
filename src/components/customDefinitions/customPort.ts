@@ -6,7 +6,7 @@
  ************************************************************************/
 
 import {portMenu} from "../menus/canvas/node/port/portMenu";
-import {Coords, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET} from "../utils";
+import {Coords, createConnection, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET} from "../utils";
 import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
 
@@ -46,12 +46,22 @@ const customPortFactory = (portConstructorName: string) => {
                 this.boundaryRect.setVisible(isWithinBoundary);
             });
 
-            this.on("dragend", (emitter:any, event: { x: any; y: any; }) => {
+            this.on("dragend", (emitter:any, event: { x: number; y: number; shiftKey: boolean; }) => {
                 const parent = this.getParent();
 
                 this.removeVirtualBoundaryFromParent();
 
                 parent.movePortToClosestEdge(this, event);
+
+                if (event.shiftKey) {
+                    const targetPort = this.getCanvas().getBestFigure(event.x, event.y);
+
+                    if (targetPort && targetPort instanceof basePort && targetPort !== this) {
+                        const connection = createConnection(this, targetPort);
+
+                        this.getCanvas().add(connection);
+                    }
+                }
             });
         },
         addVirtualBoundaryToParent: function () {
