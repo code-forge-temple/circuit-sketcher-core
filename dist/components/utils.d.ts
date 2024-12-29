@@ -14,3 +14,15 @@ export declare const labelBasicProps: {
 };
 export declare const getNestedConstructorInstanceFromPath: (obj: any, path: string) => any;
 export declare const positionSubmenu: (menu: any) => void;
+export declare const PORT_RELOCATION_OUTER_OFFSET = 40;
+export declare const isWithinVirtualBoundary: (figure: any, OFFSET: number, coords: Coords) => {
+    isWithinBoundary: boolean;
+    boundaryTopLeft: {
+        x: number;
+        y: number;
+    };
+    boundaryBottomRight: {
+        x: any;
+        y: any;
+    };
+};

@@ -6,7 +6,7 @@
  ************************************************************************/
 
 import {portMenu} from "../menus/canvas/node/port/portMenu";
-import {getNestedConstructorInstanceFromPath, labelBasicProps} from "../utils";
+import {Coords, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET} from "../utils";
 import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
 
@@ -33,6 +33,56 @@ const customPortFactory = (portConstructorName: string) => {
             this._super();
 
             this.createContextMenu();
+
+            this.on("dragstart", () => {
+                this.addVirtualBoundaryToParent();
+            });
+
+            this.on("drag", () => {
+                const parent = this.getParent();
+                const dragCoords: Coords = this.getAbsolutePosition();
+                const {isWithinBoundary} = isWithinVirtualBoundary(parent, PORT_RELOCATION_OUTER_OFFSET, dragCoords);
+
+                this.boundaryRect.setVisible(isWithinBoundary);
+            });
+
+            this.on("dragend", (emitter:any, event: { x: any; y: any; }) => {
+                const parent = this.getParent();
+
+                this.removeVirtualBoundaryFromParent();
+
+                parent.movePortToClosestEdge(this, event);
+            });
+        },
+        addVirtualBoundaryToParent: function () {
+            if(this.boundaryRect) return;
+
+            const parent = this.getParent();
+            const parentPosition = parent.getPosition();
+            const parentWidth = parent.getWidth();
+            const parentHeight = parent.getHeight();
+
+            this.boundaryRect = new draw2d.shape.basic.Rectangle({
+                x: parentPosition.x - PORT_RELOCATION_OUTER_OFFSET,
+                y: parentPosition.y - PORT_RELOCATION_OUTER_OFFSET,
+                width: parentWidth + PORT_RELOCATION_OUTER_OFFSET*2,
+                height: parentHeight + PORT_RELOCATION_OUTER_OFFSET*2,
+                stroke: 2,
+                dasharray: "-",
+                bgColor: null,
+                color: "#007bff",
+                draggable: false,
+                resizeable: false,
+                selectable: false,
+            });
+
+            this.canvas.add(this.boundaryRect);
+
+            this.boundaryRect.setVisible(false);
+        },
+        removeVirtualBoundaryFromParent: function () {
+            this.canvas.remove(this.boundaryRect);
+            this.boundaryRect = null;
         },
         setPersistentAttributes : function (memento: Record<string, any>)
         {

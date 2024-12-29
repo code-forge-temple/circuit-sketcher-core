@@ -7,26 +7,21 @@
 
 import draw2d from "draw2d";
 
-const setGetterAndSetter = (thisRef: Record<any, any>) => {
+const setGetterAndSetter = (thisRef: Record<any, any>, attributes: string[]) => {
     if(thisRef != null) {
-        thisRef.getterWhitelist = {
-            index () {
-                return thisRef.index;
-            },
-            total () {
-                return thisRef.total;
-            },
-        };
-        thisRef.setterWhitelist = {
-            index (value: number) {
-                thisRef.index = value;
-            },
-            total (value: number) {
-                thisRef.total = value;
-            },
-        };
+        thisRef.getterWhitelist = {};
+        thisRef.setterWhitelist = {};
+
+        attributes.forEach(attr => {
+            thisRef.getterWhitelist[attr] = function () {
+                return thisRef[attr];
+            };
+            thisRef.setterWhitelist[attr] = function (value: any) {
+                thisRef[attr] = value;
+            };
+        });
     }
-}
+};
 
 
 export const CustomTopLocator = draw2d.layout.locator.Locator.extend({
@@ -34,7 +29,7 @@ export const CustomTopLocator = draw2d.layout.locator.Locator.extend({
     init: function (index: number, total: any) {
         this._super();
 
-        setGetterAndSetter(this);
+        setGetterAndSetter(this, ["index", "total"]);
 
         if(index !== undefined) {
             this.attr("index", index);
@@ -57,7 +52,7 @@ export const CustomBottomLocator = draw2d.layout.locator.Locator.extend({
     init: function (index: number, total: number) {
         this._super();
 
-        setGetterAndSetter(this);
+        setGetterAndSetter(this, ["index", "total"]);
 
         if(index !== undefined) {
             this.attr("index", index);
@@ -80,7 +75,7 @@ export const CustomLeftLocator = draw2d.layout.locator.Locator.extend({
     init: function (index: number, total: number) {
         this._super();
 
-        setGetterAndSetter(this);
+        setGetterAndSetter(this, ["index", "total"]);
 
         if(index !== undefined) {
             this.attr("index", index);
@@ -103,7 +98,7 @@ export const CustomRightLocator = draw2d.layout.locator.Locator.extend({
     init: function (index: number, total: number) {
         this._super();
 
-        setGetterAndSetter(this);
+        setGetterAndSetter(this, ["index", "total"]);
 
         if(index !== undefined) {
             this.attr("index", index);

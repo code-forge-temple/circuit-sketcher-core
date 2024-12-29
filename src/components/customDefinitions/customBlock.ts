@@ -7,15 +7,14 @@
 
 import {NODE_SIDE, nodeMenu, NodeSide, PORT_TYPE, PortType} from "../menus/canvas/node/nodeMenu";
 import {openModal} from "../ModalAddImage";
-import {getNestedConstructorInstanceFromPath, labelBasicProps, toCapitalCase} from "../utils";
+import {Coords, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET, toCapitalCase} from "../utils";
 import * as CustomLocators from "./customLocator";
 import {CustomInputPort, CustomOutputPort, CustomHybridPort} from "./customPort";
 import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
 import {LocalStorageManager} from "../LocalStorageManager";
 
-type LocatorKeys = keyof typeof CustomLocators;
-
+type PortLocatorKeys = Exclude<keyof typeof CustomLocators, "CustomPositionLocator">;
 
 const nodeImage = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxzdHlsZT4uc3Qwe2ZpbGw6I2NjY2NjYzt9PC9zdHlsZT48cmVjdCBjbGFzcz0ic3QwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIi8+PC9zdmc+";
 
@@ -61,6 +60,7 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         this.children.each((_i: number, e: any) => {
             const json = e.figure.getPersistentAttributes();
             json.locator = e.locator.NAME;
+
             memento.labels.push(json);
         });
 
@@ -76,7 +76,7 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         if(!Object.values(PORT_TYPE).includes(type)) throw new Error("Invalid type: " + type);
 
         const index = this.portCounts[side]++;
-        const locatorClassName = `Custom${toCapitalCase(side)}Locator` as LocatorKeys;
+        const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
         const locator = new CustomLocators[locatorClassName](index, this.portCounts[side]);
         let port;
 
@@ -136,19 +136,104 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         const command = new draw2d.command.CommandDelete(this);
         this.canvas.getCommandStack().execute(command);
     },
+    getPortsOnSide: function (side: NodeSide) {
+        if(!Object.values(NODE_SIDE).includes(side)) throw new Error("Invalid side: " + side);
+
+        const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
+
+        return this.getPorts().data.filter((port: { getLocator: () => any; }) => port.getLocator() instanceof CustomLocators[locatorClassName]);
+    },
+    getPortSide: function (port: any) {
+        const locator = port.getLocator();
+
+        return Object.values(NODE_SIDE).find(side => {
+            const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
+
+            return locator instanceof CustomLocators[locatorClassName];
+        });
+    },
+    movePortToClosestEdge: function (port: any, dropCoords: Coords) {
+        const {isWithinBoundary, boundaryTopLeft, boundaryBottomRight} = isWithinVirtualBoundary(this, PORT_RELOCATION_OUTER_OFFSET, dropCoords);
+
+        if (!isWithinBoundary) {
+            return;
+        }
+
+        const distances = {
+            top: dropCoords.y - boundaryTopLeft.y,
+            bottom: boundaryBottomRight.y - dropCoords.y,
+            left: dropCoords.x - boundaryTopLeft.x,
+            right: boundaryBottomRight.x - dropCoords.x,
+        };
+        const closestEdge = (Object.keys(distances) as Array<keyof typeof distances>).reduce((a, b) => distances[a] < distances[b] ? a : b);
+        const currentSide = this.getPortSide(port);
+
+        if (currentSide) {
+            this.portCounts[currentSide]--;
+        }
+
+        this.removePort(port);
+
+        const targetPorts = this.getPortsOnSide(closestEdge);
+
+        let insertionIndex = targetPorts.length;
+        let incrementNext = false;
+
+        for (let index = 0; index < targetPorts.length; index++) {
+            const targetPort = targetPorts[index];
+            const targetPortPosition = targetPort.getAbsolutePosition();
+            if (closestEdge === NODE_SIDE.TOP || closestEdge === NODE_SIDE.BOTTOM) {
+                if (dropCoords.x < targetPortPosition.x) {
+                    insertionIndex = index;
+                    incrementNext = true;
+                }
+            } else { // LEFT or RIGHT
+                if (dropCoords.y < targetPortPosition.y) {
+                    insertionIndex = index;
+                    incrementNext = true;
+                }
+            }
+
+            if(incrementNext) {
+                targetPort.getLocator().attr("index", targetPort.getLocator().attr("index") + 1);
+            }
+        }
+
+        this.portCounts[closestEdge]++;
+
+        const locatorClassName = `Custom${toCapitalCase(closestEdge)}Locator` as PortLocatorKeys;
+        const locator = new CustomLocators[locatorClassName](insertionIndex, this.portCounts[closestEdge]);
+
+        port.setLocator(locator);
+
+        this.addPort(port, locator);
+
+        // Trigger a redraw of the port's label
+        port.getChildren().each((_i: number, child: any) => {
+            child.repaint();
+        });
+
+        this.relocatePorts();
+        this.repaint();
+    },
     relocatePorts: function () {
         const sides = Object.values(NODE_SIDE);
 
         sides.forEach((side) => {
             const ports = this.getPorts().data.filter((port: { getLocator: () => any; }) => {
                 const locator = port.getLocator();
-                const locatorClassName = `Custom${toCapitalCase(side)}Locator` as LocatorKeys;
+                const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
 
                 return (locator instanceof CustomLocators[locatorClassName]);
             });
 
-            ports.forEach((port: any, index: number) => {
-                const locatorClassName = `Custom${toCapitalCase(side)}Locator` as LocatorKeys;
+            // Sort the ports by their locator's "index" attribute before repositioning
+            ports.sort((a: any, b: any) => {
+                const indexA = a.getLocator().attr("index");
+                const indexB = b.getLocator().attr("index");
+                return indexA - indexB;
+            }).forEach((port: any, index: number) => {
+                const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
                 const locator = new CustomLocators[locatorClassName](index, ports.length);
 
                 port.setLocator(locator);

@@ -47,3 +47,32 @@ export const positionSubmenu = (menu: any) => {
         $submenu.css({left: `${-submenuRect.width + 5}px`});
     }
 }
+
+export const PORT_RELOCATION_OUTER_OFFSET = 40;
+
+export const isWithinVirtualBoundary = (figure: any, OFFSET: number, coords: Coords) => {
+    const position = figure.getAbsolutePosition();
+    const width = figure.getWidth();
+    const height = figure.getHeight();
+
+    const boundaryTopLeft = {
+        x: position.x - OFFSET,
+        y: position.y - OFFSET
+    };
+    const boundaryBottomRight = {
+        x: position.x + width + OFFSET,
+        y: position.y + height + OFFSET
+    };
+
+    const isWithinBoundary =
+        coords.x >= boundaryTopLeft.x &&
+        coords.x <= boundaryBottomRight.x &&
+        coords.y >= boundaryTopLeft.y &&
+        coords.y <= boundaryBottomRight.y;
+
+    return {
+        isWithinBoundary,
+        boundaryTopLeft,
+        boundaryBottomRight
+    }
+}
