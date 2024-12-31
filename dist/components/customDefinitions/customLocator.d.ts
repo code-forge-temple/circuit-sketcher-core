@@ -8,3 +8,4 @@ export declare const CustomTopLocator: any;
 export declare const CustomBottomLocator: any;
 export declare const CustomLeftLocator: any;
 export declare const CustomRightLocator: any;
+export declare const CustomPortLabelLocator: any;

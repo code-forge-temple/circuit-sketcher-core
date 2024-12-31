@@ -8,5 +8,6 @@ import './portMenu.scss';
 type AddPortLabel = (port: any) => void;
 type RemoveCreatedPort = (port: any) => void;
 type RemovePortLabel = () => void;
-export declare const portMenu: (addPortLabel: AddPortLabel, removePortLabel: RemovePortLabel, removeCreatedPort: RemoveCreatedPort) => (x: number, y: number) => void;
+type HasLabel = () => boolean;
+export declare const portMenu: (hasLabel: HasLabel, addPortLabel: AddPortLabel, removePortLabel: RemovePortLabel, removeCreatedPort: RemoveCreatedPort) => (x: number, y: number) => void;
 export {};

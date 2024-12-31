@@ -5,14 +5,15 @@
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
 
-import {NODE_SIDE, nodeMenu, NodeSide, PORT_TYPE, PortType} from "../menus/canvas/node/nodeMenu";
+import {nodeMenu, PORT_TYPE, PortType} from "../menus/canvas/node/nodeMenu";
 import {openModal} from "../ModalAddImage";
-import {Coords, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET, toCapitalCase} from "../utils";
+import {DEFAULT_LABEL_NAME, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET, toCapitalCase} from "../utils";
 import * as CustomLocators from "./customLocator";
 import {CustomInputPort, CustomOutputPort, CustomHybridPort} from "./customPort";
 import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
 import {LocalStorageManager} from "../LocalStorageManager";
+import {Coords, SIDE, Side} from "../types";
 
 type PortLocatorKeys = Exclude<keyof typeof CustomLocators, "CustomPositionLocator">;
 
@@ -22,9 +23,10 @@ const nodeImage = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB
 export const CustomBlock = draw2d.shape.basic.Image.extend({
     NAME : "customDefinitions.CustomBlock",
     init: function (attr: any) {
-        this._super($.extend({width: 100, height: 100, path: nodeImage}, attr));
+        this._super({width: 100, height: 100, path: nodeImage, ...attr});
         this.createContextMenu();
         this.portCounts = {top: 0, bottom: 0, left: 0, right: 0};
+        this.lockedPorts = false;
         this.createLabel();
     },
     setPersistentAttributes : function (memento: Record<string, any>)
@@ -43,11 +45,21 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
             figure.attr(json);
 
             // Instantiate the locator
-            const locator = getNestedConstructorInstanceFromPath(draw2d, json.locator.replace("draw2d.", ""));
+            let locator;
+
+            if(json.locator.startsWith("draw2d.")) {
+                // this is a locator defined in the draw2d library
+                locator = getNestedConstructorInstanceFromPath(draw2d, json.locator.replace("draw2d.", ""));
+            } else {
+                // this is one of our custom locators
+                locator = getNestedConstructorInstanceFromPath(window, json.locator);
+            }
 
             // Add the new figure as child to this figure
             this.add(figure, locator);
         });
+
+        this.lockedPorts = memento.lockedPorts;
     },
     getPersistentAttributes : function () {
         const memento = this._super();
@@ -64,15 +76,21 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
             memento.labels.push(json);
         });
 
+        memento.lockedPorts = this.lockedPorts;
+
         return memento;
     },
     createContextMenu: function () {
         this.onContextMenu = nodeMenu(this.addPortOnSide.bind(this), () => {
+            return this.lockedPorts;
+        }, (lockedPorts: boolean) => {
+            this.lockedPorts = lockedPorts;
+        }, () => {
             openModal(this.id);
         }, this.saveNodeToLibrary.bind(this), this.removeNode.bind(this));
     },
-    addPortOnSide: function (side: NodeSide, type: PortType) {
-        if(!Object.values(NODE_SIDE).includes(side)) throw new Error("Invalid side: " + side);
+    addPortOnSide: function (side: Side, type: PortType) {
+        if(!Object.values(SIDE).includes(side)) throw new Error("Invalid side: " + side);
         if(!Object.values(PORT_TYPE).includes(type)) throw new Error("Invalid type: " + type);
 
         const index = this.portCounts[side]++;
@@ -93,8 +111,8 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         }
 
         port.setLocator(locator);
-        port.setName(`${side}-port-${index}`);
-        port.createLabel();
+        port.setName(draw2d.util.UUID.create()); //!important to set a unique name for the port as this is used to identify the port in the connections
+        port.createLabel(DEFAULT_LABEL_NAME);
 
         this.addPort(port); // Add port to the node
         this.relocatePorts(); // Reposition all ports to be equidistant
@@ -136,23 +154,29 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         const command = new draw2d.command.CommandDelete(this);
         this.canvas.getCommandStack().execute(command);
     },
-    getPortsOnSide: function (side: NodeSide) {
-        if(!Object.values(NODE_SIDE).includes(side)) throw new Error("Invalid side: " + side);
+    getPortsOnSide: function (side: Side) {
+        if(!Object.values(SIDE).includes(side)) throw new Error("Invalid side: " + side);
 
         const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
 
-        return this.getPorts().data.filter((port: { getLocator: () => any; }) => port.getLocator() instanceof CustomLocators[locatorClassName]);
+        return this.getPorts().data
+            .filter((port: { getLocator: () => any; }) => port.getLocator() instanceof CustomLocators[locatorClassName])
+            .sort((a: any, b: any) => a.getLocator().attr("index") - b.getLocator().attr("index")); // !important sorting by locator index ascending since this.getPorts().data does not know about our locators indexing
     },
     getPortSide: function (port: any) {
         const locator = port.getLocator();
 
-        return Object.values(NODE_SIDE).find(side => {
+        return Object.values(SIDE).find(side => {
             const locatorClassName = `Custom${toCapitalCase(side)}Locator` as PortLocatorKeys;
 
             return locator instanceof CustomLocators[locatorClassName];
         });
     },
     movePortToClosestEdge: function (port: any, dropCoords: Coords) {
+        if(this.lockedPorts) {
+            return;
+        }
+
         const {isWithinBoundary, boundaryTopLeft, boundaryBottomRight} = isWithinVirtualBoundary(this, PORT_RELOCATION_OUTER_OFFSET, dropCoords);
 
         if (!isWithinBoundary) {
@@ -165,16 +189,29 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
             left: dropCoords.x - boundaryTopLeft.x,
             right: boundaryBottomRight.x - dropCoords.x,
         };
-        const closestEdge = (Object.keys(distances) as Array<keyof typeof distances>).reduce((a, b) => distances[a] < distances[b] ? a : b);
+        const closestSide = (Object.keys(distances) as Array<keyof typeof distances>).reduce((a, b) => distances[a] < distances[b] ? a : b);
         const currentSide = this.getPortSide(port);
 
         if (currentSide) {
             this.portCounts[currentSide]--;
         }
 
+        // Store the connections before removing the port
+        const oldConnections = port.getConnections().clone();
+
         this.removePort(port);
 
-        const targetPorts = this.getPortsOnSide(closestEdge);
+        let targetPorts = this.getPortsOnSide(closestSide); // the ports are sorted ascending by locator index
+
+        if(currentSide === closestSide) {
+            targetPorts = targetPorts.map((port: any, index: number) => {
+                const locator = port.getLocator();
+
+                locator.attr("index", index); // we need to reindex since we have removed the port that is repositioning
+
+                return port;
+            });
+        }
 
         let insertionIndex = targetPorts.length;
         let incrementNext = false;
@@ -182,14 +219,21 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         for (let index = 0; index < targetPorts.length; index++) {
             const targetPort = targetPorts[index];
             const targetPortPosition = targetPort.getAbsolutePosition();
-            if (closestEdge === NODE_SIDE.TOP || closestEdge === NODE_SIDE.BOTTOM) {
+
+            if (closestSide === SIDE.TOP || closestSide === SIDE.BOTTOM) {
                 if (dropCoords.x < targetPortPosition.x) {
-                    insertionIndex = index;
+                    if(!incrementNext) {
+                        insertionIndex = index;
+                    }
+
                     incrementNext = true;
                 }
             } else { // LEFT or RIGHT
                 if (dropCoords.y < targetPortPosition.y) {
-                    insertionIndex = index;
+                    if(!incrementNext) {
+                        insertionIndex = index;
+                    }
+
                     incrementNext = true;
                 }
             }
@@ -199,14 +243,17 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
             }
         }
 
-        this.portCounts[closestEdge]++;
+        this.portCounts[closestSide]++;
 
-        const locatorClassName = `Custom${toCapitalCase(closestEdge)}Locator` as PortLocatorKeys;
-        const locator = new CustomLocators[locatorClassName](insertionIndex, this.portCounts[closestEdge]);
+        const locatorClassName = `Custom${toCapitalCase(closestSide)}Locator` as PortLocatorKeys;
+        const locator = new CustomLocators[locatorClassName](insertionIndex, this.portCounts[closestSide]);
 
         port.setLocator(locator);
 
         this.addPort(port, locator);
+
+        port.createLabel(); // we need to recreate the label because it might have a different locator now
+        port.restoreConnections(oldConnections);
 
         // Trigger a redraw of the port's label
         port.getChildren().each((_i: number, child: any) => {
@@ -217,7 +264,7 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         this.repaint();
     },
     relocatePorts: function () {
-        const sides = Object.values(NODE_SIDE);
+        const sides = Object.values(SIDE);
 
         sides.forEach((side) => {
             const ports = this.getPorts().data.filter((port: { getLocator: () => any; }) => {

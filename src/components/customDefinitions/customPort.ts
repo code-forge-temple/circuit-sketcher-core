@@ -6,9 +6,11 @@
  ************************************************************************/
 
 import {portMenu} from "../menus/canvas/node/port/portMenu";
-import {Coords, createConnection, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET} from "../utils";
+import {createConnection, DEFAULT_LABEL_NAME, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET} from "../utils";
 import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
+import {CustomPortLabelLocator} from "./customLocator";
+import {Coords, SIDE} from "../types";
 
 const customPortFactory = (portConstructorName: string) => {
     let basePort;
@@ -43,7 +45,9 @@ const customPortFactory = (portConstructorName: string) => {
                 const dragCoords: Coords = this.getAbsolutePosition();
                 const {isWithinBoundary} = isWithinVirtualBoundary(parent, PORT_RELOCATION_OUTER_OFFSET, dragCoords);
 
-                this.boundaryRect.setVisible(isWithinBoundary);
+                if(!this.getParent().lockedPorts) {
+                    this.boundaryRect.setVisible(isWithinBoundary);
+                }
             });
 
             this.on("dragend", (emitter:any, event: { x: number; y: number; shiftKey: boolean; }) => {
@@ -113,7 +117,19 @@ const customPortFactory = (portConstructorName: string) => {
                 figure.attr(json);
 
                 // Instantiate the locator
-                const locator = getNestedConstructorInstanceFromPath(draw2d, json.locator.replace("draw2d.", ""));
+                let locator;
+
+                if(json.locator.startsWith("draw2d.")) {
+                    // this is a locator defined in the draw2d library
+                    locator = getNestedConstructorInstanceFromPath(draw2d, json.locator.replace("draw2d.", ""));
+                } else {
+                    // this is one of our custom locators
+                    locator = getNestedConstructorInstanceFromPath(window, json.locator);
+
+                    if(locator.setPersistentAttributes) {
+                        locator.setPersistentAttributes(json.locatorAttr);
+                    }
+                }
 
                 // Add the new figure as child to this figure
                 this.add(figure, locator);
@@ -129,14 +145,31 @@ const customPortFactory = (portConstructorName: string) => {
             memento.labels = [];
             this.children.each((_i: number, e: any) => {
                 const json = e.figure.getPersistentAttributes();
+
                 json.locator = e.locator.NAME;
+
+                if(e.locator.getPersistentAttributes) {
+                    json.locatorAttr = e.locator.getPersistentAttributes();
+                }
+
                 memento.labels.push(json);
             });
 
             return memento;
         },
-        createLabel: function () {
-            const label = new draw2d.shape.basic.Label({text: this.getName(), ...labelBasicProps});
+        createLabel: function (labelName?:string) {
+            let oldLabelName;
+
+            if(this.children.data.length)
+            {
+                oldLabelName = this.children.data[0].figure.text;
+
+                this.resetChildren(); // we are removing the label before adding a new one
+            } else if(!labelName) {
+                return;
+            }
+
+            const label = new draw2d.shape.basic.Label({text: oldLabelName || labelName || DEFAULT_LABEL_NAME, ...labelBasicProps});
 
             label.setColor("#000000");
             label.setFontColor("#000000");
@@ -144,11 +177,28 @@ const customPortFactory = (portConstructorName: string) => {
             label.setStroke(0);
             label.installEditor(new draw2d.ui.LabelInplaceEditor());
 
-            this.add(label, new draw2d.layout.locator.BottomLocator());
+            switch (this.getLocator().NAME.split(".")[2]) {
+                case "CustomLeftLocator":
+                    this.add(label, new CustomPortLabelLocator(SIDE.RIGHT));
+                    break;
+                case "CustomRightLocator":
+                    this.add(label, new CustomPortLabelLocator(SIDE.LEFT));
+                    break;
+                case "CustomTopLocator":
+                    this.add(label, new CustomPortLabelLocator(SIDE.BOTTOM));
+                    break;
+                case "CustomBottomLocator":
+                    this.add(label, new CustomPortLabelLocator(SIDE.TOP));
+                    break;
+            }
+
+            label.repaint();
         },
         createContextMenu: function () {
             this.onContextMenu = portMenu(() => {
-                this.createLabel(true);
+                return this.children.data.length > 0;
+            }, () => {
+                this.createLabel(DEFAULT_LABEL_NAME);
 
                 this.canvas.getCommandStack().execute(new DummyCommand());
             }, () => {
@@ -157,6 +207,20 @@ const customPortFactory = (portConstructorName: string) => {
                 this.canvas.getCommandStack().execute(new DummyCommand());
             }, () => {
                 this.getParent().removeCreatedPort(this);
+            });
+        },
+        restoreConnections: function (connections: any) {
+            connections.each((_i: number, connection: any) => {
+                const sourcePort = connection.getSource();
+                const targetPort = connection.getTarget();
+
+                if (sourcePort === this) {
+                    connection.setSource(this);
+                } else if (targetPort === this) {
+                    connection.setTarget(this);
+                }
+
+                this.canvas.add(connection);
             });
         },
     });

@@ -6,6 +6,7 @@
  ************************************************************************/
 
 import draw2d from "draw2d";
+import {SIDE, Side} from "../types";
 
 const setGetterAndSetter = (thisRef: Record<any, any>, attributes: string[]) => {
     if(thisRef != null) {
@@ -118,12 +119,59 @@ export const CustomRightLocator = draw2d.layout.locator.Locator.extend({
     },
 });
 
+export const CustomPortLabelLocator = draw2d.layout.locator.Locator.extend({
+    NAME: "customDefinitions.customLocators.CustomPortLabelLocator",
+    init: function (side: Side) {
+        this._super();
+
+        setGetterAndSetter(this, ["side"]);
+
+        if(side !== undefined) {
+            this.attr("side", side);
+        }
+    },
+    relocate: function (_index: number, figure: any) {
+        const portWidth = 10;
+        const portHeight = 10;
+        const labelWidth = figure.getWidth();
+        const labelHeight = figure.getHeight();
+        const side = this.attr("side") as Side;
+
+        switch (side) {
+            case SIDE.LEFT:
+                figure.setPosition(-labelWidth - 15, - labelHeight / 2);
+                break;
+            case SIDE.RIGHT:
+                figure.setPosition(portWidth + 5, - labelHeight / 2);
+                break;
+            case SIDE.TOP:
+                figure.setPosition(- labelWidth / 2, -labelHeight - 15);
+                break;
+            case SIDE.BOTTOM:
+                figure.setPosition(- labelWidth / 2, portHeight + 5);
+                break;
+        }
+    },
+    // this will be called in the customPorts class since the label does not have this functionality in draw2d
+    setPersistentAttributes : function (attr: Record<string, any>)
+    {
+        this.attr("side", attr.side);
+    },
+    // this will be called in the customPorts class since the label does not have this functionality in draw2d
+    getPersistentAttributes : function () {
+        return {
+            side: this.attr("side"),
+        };
+    },
+});
+
 window.customDefinitions = Object.assign(window.customDefinitions || {}, {
     customLocators: {
         CustomTopLocator,
         CustomBottomLocator,
         CustomLeftLocator,
         CustomRightLocator,
+        CustomPortLabelLocator,
     },
 });
 

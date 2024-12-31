@@ -20,7 +20,7 @@ import "jquery-contextmenu";
 import {canvasMenu} from "../menus/canvas/canvasMenu";
 import {CustomBlock} from "../customDefinitions/customBlock";
 import "../menus/jquery-contextmenu.scss";
-import {Coords, createConnection, labelBasicProps} from "../utils";
+import {createConnection, labelBasicProps} from "../utils";
 import draw2d from "draw2d";
 import {LocalStorageManager} from "../LocalStorageManager";
 import {DummyCommand} from "../customDefinitions/customCommands";
@@ -29,6 +29,7 @@ import {DummyCommand} from "../customDefinitions/customCommands";
 
 
 import {ObserverCanvas} from "./ObserverCanvas";
+import {Coords} from "../types";
 
 export class CanvasManager extends ObserverCanvas {
     private static instance: CanvasManager | null;
@@ -197,7 +198,7 @@ export class CanvasManager extends ObserverCanvas {
 
         this.loadCanvasMenu();
 
-        this.canvas.getCommandStack().execute(new DummyCommand()); // so Obsidian saves the library
+        this.canvas.getCommandStack().execute(new DummyCommand());
     }
 
     public setNodeImage = (nodeId: string, imgSrc: string) => {

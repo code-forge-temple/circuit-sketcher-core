@@ -5,14 +5,16 @@
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
 
+import {MenuItem} from '../../../../types';
 import {positionSubmenu} from '../../../../utils';
 import './portMenu.scss';
 
 type AddPortLabel = (port:any) => void;
 type RemoveCreatedPort = (port: any) => void;
 type RemovePortLabel = () => void;
+type HasLabel = () => boolean;
 
-export const portMenu = (addPortLabel: AddPortLabel, removePortLabel: RemovePortLabel, removeCreatedPort: RemoveCreatedPort) =>
+export const portMenu = (hasLabel: HasLabel, addPortLabel: AddPortLabel, removePortLabel: RemovePortLabel, removeCreatedPort: RemoveCreatedPort) =>
     (x: number, y: number) => {
         return $.contextMenu({
             selector: "body",
@@ -32,7 +34,7 @@ export const portMenu = (addPortLabel: AddPortLabel, removePortLabel: RemovePort
             },
             x: x,
             y: y,
-            items: portMenuItems(),
+            items: portMenuItems(hasLabel),
             stopPropagation: true, // Prevent event bubbling
             positionSubmenu: function () {
                 positionSubmenu(this);
@@ -40,19 +42,26 @@ export const portMenu = (addPortLabel: AddPortLabel, removePortLabel: RemovePort
         });
     };
 
-const portMenuItems = () => {
+const portMenuItems = (hasLabel: HasLabel) => {
+    const manageLabelMenuItem: { label_add?: MenuItem; label_remove?: MenuItem } = {};
+
+    if(!hasLabel())
+    {
+        manageLabelMenuItem.label_add = {
+            name: "Add",
+        };
+    } else {
+        manageLabelMenuItem.label_remove = {
+            name: "Remove",
+        };
+    };
+
     return {
         label: {
             name: "Manage Label",
             className: "context-menu-icon-manage-label",
             items: {
-                label_add: {
-                    name: "Add",
-                    //disabled: this.children.data.length > 0,
-                },
-                label_remove: {
-                    name: "Remove",
-                },
+                ...manageLabelMenuItem,
             },
         },
         remove_port: {

@@ -5,22 +5,16 @@
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
 
+import {MenuItem, SIDE, Side} from "../../../types";
 import {positionSubmenu} from "../../../utils";
 import "./nodeMenu.scss";
 
 type SaveNodeToLibrary = () => void;
 type RemoveNode = () => void;
 type ChangeImage = () => void;
+type GetLockedPorts = () => boolean;
+type SetLockedPorts = (lockedPorts: boolean) => void;
 type AddPortOnSide = (side: string, type: string) => void;
-
-export const NODE_SIDE = {
-    LEFT: "left",
-    TOP: "top",
-    RIGHT: "right",
-    BOTTOM: "bottom",
-} as const;
-
-export type NodeSide = (typeof NODE_SIDE)[keyof typeof NODE_SIDE];
 
 export const PORT_TYPE = {
     IN: "in",
@@ -30,9 +24,11 @@ export const PORT_TYPE = {
 
 export type PortType = (typeof PORT_TYPE)[keyof typeof PORT_TYPE];
 
-type AddPortMenuKey = `${NodeSide}_${PortType}`;
+type MenuKeys = AddPortMenuKey | "save_node_to_library" | "remove_node" | "change_image" | "lock_ports_relocation" | "unlock_ports_relocation";
 
-export const nodeMenu = (addPortOnSide: AddPortOnSide, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, removeNode: RemoveNode) =>
+type AddPortMenuKey = `${Side}_${PortType}`;
+
+export const nodeMenu = (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, removeNode: RemoveNode) =>
     (x: number, y: number) => {
         return $.contextMenu({
             selector: "body",
@@ -41,17 +37,19 @@ export const nodeMenu = (addPortOnSide: AddPortOnSide, changeImage: ChangeImage,
                     $.contextMenu("destroy");
                 },
             },
-            callback: function (key: AddPortMenuKey | "save_node_to_library" | "remove_node" | "change_image") {
+            callback: function (key: MenuKeys) {
                 if (key === "remove_node") {
                     removeNode();
                 } else if (key === "save_node_to_library") {
                     saveNodeToLibrary();
                 } else if (key === "change_image") {
                     changeImage();
+                } else if (key === "lock_ports_relocation" || key === "unlock_ports_relocation") {
+                    setLockedPorts(key === "lock_ports_relocation" ? true : false);
                 } else {
-                    const [side, type] = key.split("_") as [NodeSide, PortType];
+                    const [side, type] = key.split("_") as [Side, PortType];
 
-                    if (Object.values(NODE_SIDE).includes(side) && Object.values(PORT_TYPE).includes(type)) {
+                    if (Object.values(SIDE).includes(side) && Object.values(PORT_TYPE).includes(type)) {
                         addPortOnSide(side, type);
                     } else {
                         console.error("Invalid key:", key);
@@ -60,7 +58,7 @@ export const nodeMenu = (addPortOnSide: AddPortOnSide, changeImage: ChangeImage,
             },
             x: x,
             y: y,
-            items: nodeMenuItems(),
+            items: nodeMenuItems(getLockedPorts),
             stopPropagation: true, // Prevent event bubbling
             positionSubmenu: function () {
                 positionSubmenu(this);
@@ -68,7 +66,22 @@ export const nodeMenu = (addPortOnSide: AddPortOnSide, changeImage: ChangeImage,
         });
     };
 
-const nodeMenuItems = () => {
+const nodeMenuItems = (getLockedPorts: GetLockedPorts) => {
+    const lockUnlockPortsMenuItem: { unlock_ports_relocation?: MenuItem; lock_ports_relocation?: MenuItem } = {};
+
+    if(getLockedPorts())
+    {
+        lockUnlockPortsMenuItem.unlock_ports_relocation = {
+            name: "Unlock Ports Relocation",
+            className: "context-menu-icon-unlock-ports",
+        };
+    } else {
+        lockUnlockPortsMenuItem.lock_ports_relocation = {
+            name: "Lock Ports Relocation",
+            className: "context-menu-icon-lock-ports",
+        };
+    };
+
     return {
         add_port: {
             name: "Add Port",
@@ -77,37 +90,38 @@ const nodeMenuItems = () => {
                 left: {
                     name: "Left",
                     items: {
-                        [`${NODE_SIDE.LEFT}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${NODE_SIDE.LEFT}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${NODE_SIDE.LEFT}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.IO}`]: {name: "IO"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.IN}`]: {name: "In"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.OUT}`]: {name: "Out"},
                     },
                 },
                 top: {
                     name: "Top",
                     items: {
-                        [`${NODE_SIDE.TOP}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${NODE_SIDE.TOP}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${NODE_SIDE.TOP}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.TOP}_${PORT_TYPE.IO}`]: {name: "IO"},
+                        [`${SIDE.TOP}_${PORT_TYPE.IN}`]: {name: "In"},
+                        [`${SIDE.TOP}_${PORT_TYPE.OUT}`]: {name: "Out"},
                     },
                 },
                 right: {
                     name: "Right",
                     items: {
-                        [`${NODE_SIDE.RIGHT}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${NODE_SIDE.RIGHT}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${NODE_SIDE.RIGHT}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.IO}`]: {name: "IO"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.IN}`]: {name: "In"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.OUT}`]: {name: "Out"},
                     },
                 },
                 bottom: {
                     name: "Bottom",
                     items: {
-                        [`${NODE_SIDE.BOTTOM}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${NODE_SIDE.BOTTOM}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${NODE_SIDE.BOTTOM}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.IO}`]: {name: "IO"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.IN}`]: {name: "In"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.OUT}`]: {name: "Out"},
                     },
                 },
             },
         },
+        ...lockUnlockPortsMenuItem,
         change_image: {
             name: "Change Image",
             className: "context-menu-icon-change-image",

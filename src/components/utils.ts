@@ -5,16 +5,12 @@
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
 
-import draw2d from "draw2d";
+import {Coords} from "./types";
+import {CustomConnection} from "./customDefinitions/customConnection";
 
 export const toCapitalCase = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
-
-export type Coords = {
-    x: number;
-    y: number;
-};
 
 export const labelBasicProps = {
     fontFamily: `'Consolas', monospace`
@@ -79,18 +75,8 @@ export const isWithinVirtualBoundary = (figure: any, OFFSET: number, coords: Coo
     }
 }
 
-const router = new draw2d.layout.connection.InteractiveManhattanConnectionRouter();
-
-router.abortRoutingOnFirstVertexNode = false;
-
-export const createConnection = function (sourcePort:any, targetPort:any) {
-    const connection = new draw2d.Connection({
-        outlineColor: "#00A8F0",
-        outlineStroke: 1,
-        router,
-        stroke: 1,
-        radius: 2,
-    });
+export const createConnection = function (sourcePort: any, targetPort: any) {
+    const connection = new CustomConnection();
 
     if (sourcePort) {
         connection.setSource(sourcePort);
@@ -99,3 +85,5 @@ export const createConnection = function (sourcePort:any, targetPort:any) {
 
     return connection;
 };
+
+export const DEFAULT_LABEL_NAME = "label-name";
