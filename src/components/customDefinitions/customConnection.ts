@@ -57,6 +57,8 @@ export const CustomConnection = draw2d.Connection.extend({
 
         if (sourcePort) this.revertLabel(sourcePort);
         if (targetPort) this.revertLabel(targetPort);
+
+        this.canvas.getCommandStack().execute(new DummyCommand());
     },
 
     onKeyDown: function (event: KeyboardEvent) {
