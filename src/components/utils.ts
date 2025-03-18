@@ -34,15 +34,21 @@ export const positionSubmenu = (menu: any) => {
     const $submenu = $(menu).children("ul.context-menu-list");
     const submenuRect = $submenu[0].getBoundingClientRect();
     const currentMenuRect = $(menu).parent()[0].getBoundingClientRect();
+    const currentMenuItemRect = $(menu)[0].getBoundingClientRect();
 
     const viewportWidth = $(window).width();
+    const viewportHeight = $(window).height();
 
-    if(viewportWidth === undefined) return;
+    if(viewportWidth === undefined || viewportHeight === undefined) return;
 
     if(currentMenuRect.x + currentMenuRect.width + submenuRect.width < viewportWidth - 10) {
         $submenu.css({left: `${currentMenuRect.width - 5}px`});
     } else {
         $submenu.css({left: `${-submenuRect.width + 5}px`});
+    }
+
+    if (currentMenuRect.y + currentMenuRect.height + submenuRect.height > viewportHeight - 10) {
+        $submenu.css({top: `${-submenuRect.height + currentMenuItemRect.height}px`});
     }
 }
 

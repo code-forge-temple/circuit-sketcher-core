@@ -1,6 +1,6 @@
 {
     "name": "circuit-sketcher-core",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "main": "dist/main.js",
     "types": "dist/main.d.ts",
     "sideEffects": true,
@@ -15,7 +15,7 @@
     "author": "Code Forge Temple",
     "license": "GPL",
     "dependencies": {
-        "draw2d": "git+https://github.com/code-forge-temple/draw2d.git",
+        "draw2d": "github:code-forge-temple/draw2d",
         "jquery": "^3.7.1",
         "jquery-contextmenu": "^2.9.2",
         "jquery-ui": "^1.14.1"
