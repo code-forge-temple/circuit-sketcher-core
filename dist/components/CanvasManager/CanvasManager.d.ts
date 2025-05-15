@@ -39,6 +39,7 @@ export declare class CanvasManager extends ObserverCanvas {
     private removeNodeFromLib;
     setNodeImage: (nodeId: string, imgSrc: string) => void;
     toJson: () => Promise<object[]>;
+    toPng: () => Promise<string>;
     stringify<T extends boolean | undefined>(sync?: T): T extends true ? string : Promise<string>;
     parse: (json: string) => void;
     protected getCanvas: () => any;

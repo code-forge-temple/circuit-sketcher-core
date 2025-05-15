@@ -218,6 +218,74 @@ export class CanvasManager extends ObserverCanvas {
         });
     }
 
+    public toPng = async (): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            try {
+                const writer = new draw2d.io.png.Writer();
+
+                const figures = this.canvas.getFigures();
+                const lines = this.canvas.getLines();
+                let minX = NaN, minY = NaN, maxX = NaN, maxY = NaN;
+
+                figures.each((_i: number, figure: any) => {
+                    const x = figure.getAbsoluteX ? figure.getAbsoluteX() : figure.x;
+                    const y = figure.getAbsoluteY ? figure.getAbsoluteY() : figure.y;
+                    const width = figure.getWidth();
+                    const height = figure.getHeight();
+
+                    minX = !isNaN(minX) ? Math.min(minX, x) : x;
+                    minY = !isNaN(minY) ? Math.min(minY, y) : y;
+                    maxX = !isNaN(maxX) ? Math.max(maxX, x + width) : x + width;
+                    maxY = !isNaN(maxY) ? Math.max(maxY, y + height) : y + height;
+
+                    if (figure.getChildren && typeof figure.getChildren === "function") {
+                        figure.getChildren().each((_j: number, child: any) => {
+                            const cx = child.getAbsoluteX ? child.getAbsoluteX() : child.x;
+                            const cy = child.getAbsoluteY ? child.getAbsoluteY() : child.y;
+                            const cwidth = child.getWidth();
+                            const cheight = child.getHeight();
+
+                            minX = !isNaN(minX) ? Math.min(minX, cx) : cx;
+                            minY = !isNaN(minY) ? Math.min(minY, cy) : cy;
+                            maxX = !isNaN(maxX) ? Math.max(maxX, cx + cwidth) : cx + cwidth;
+                            maxY = !isNaN(maxY) ? Math.max(maxY, cy + cheight) : cy + cheight;
+                        });
+                    }
+                });
+
+                lines.each((_i: number, line: any) => {
+                    line.getVertices().each((_j: number, vertex: any) => {
+                        const vx = vertex.x;
+                        const vy = vertex.y;
+
+                        minX = !isNaN(minX) ? Math.min(minX, vx) : vx;
+                        minY = !isNaN(minY) ? Math.min(minY, vy) : vy;
+                        maxX = !isNaN(maxX) ? Math.max(maxX, vx) : vx;
+                        maxY = !isNaN(maxY) ? Math.max(maxY, vy) : vy;
+                    });
+                });
+
+                if (isNaN(minX) || isNaN(minY) || isNaN(maxX) || isNaN(maxY)) {
+                    minX = 0; minY = 0; maxX = this.canvas.getWidth(); maxY = this.canvas.getHeight();
+                }
+
+                const PADDING = 20;
+                const area = {
+                    x: Math.floor(minX) - PADDING,
+                    y: Math.floor(minY) - PADDING,
+                    w: Math.ceil(maxX - minX) + 2 * PADDING,
+                    h: Math.ceil(maxY - minY) + 2 * PADDING
+                };
+
+                writer.marshal(this.canvas, (png: string) => {
+                    resolve(png);
+                }, area);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
     public stringify<T extends boolean | undefined>(sync?: T): T extends true ? string : Promise<string>;
 
     public stringify (sync?: boolean): Promise<string> | string {
