@@ -7,7 +7,7 @@
 
 import {nodeMenu, PORT_TYPE, PortType} from "../menus/canvas/node/nodeMenu";
 import {openModal} from "../ModalAddImage";
-import {DEFAULT_LABEL_NAME, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET, toCapitalCase} from "../utils";
+import {DEFAULT_LABEL_NAME, exportJsonFile, getNestedConstructorInstanceFromPath, isWithinVirtualBoundary, labelBasicProps, PORT_RELOCATION_OUTER_OFFSET, toCapitalCase} from "../utils";
 import * as CustomLocators from "./customLocator";
 import {CustomInputPort, CustomOutputPort, CustomHybridPort} from "./customPort";
 import draw2d from "draw2d";
@@ -81,13 +81,25 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
         return memento;
     },
     createContextMenu: function () {
-        this.onContextMenu = nodeMenu(this.addPortOnSide.bind(this), () => {
-            return this.lockedPorts;
-        }, (lockedPorts: boolean) => {
-            this.lockedPorts = lockedPorts;
-        }, () => {
-            openModal(this.id);
-        }, this.saveNodeToLibrary.bind(this), this.removeNode.bind(this));
+        this.onContextMenu = nodeMenu(
+            this.addPortOnSide.bind(this),
+            () => {
+                return this.lockedPorts;
+            },
+            (lockedPorts: boolean) => {
+                this.lockedPorts = lockedPorts;
+            },
+            () => {
+                openModal(this.id);
+            },
+            this.saveNodeToLibrary.bind(this),
+            async () => {
+                const {nodeJson, nodeLabel} = await this.extractNodeData();
+
+                exportJsonFile({[nodeLabel]: nodeJson}, nodeLabel);
+            },
+            this.removeNode.bind(this)
+        );
     },
     addPortOnSide: function (side: Side, type: PortType) {
         if(!Object.values(SIDE).includes(side)) throw new Error("Invalid side: " + side);
@@ -293,11 +305,20 @@ export const CustomBlock = draw2d.shape.basic.Image.extend({
             });
         });
     },
-    saveNodeToLibrary: async function () {
+    extractNodeData: async function () {
         const canvasJson = await this.toJson();
         const nodeJson = Object.values(canvasJson as Record<string, {id: string}>).find(({id}) => id === this.id);
+        const nodeLabel = this.children.data[0].figure.text;
 
-        LocalStorageManager.addItemToLibrary(this.children.data[0].figure.text, nodeJson);
+        return {
+            nodeJson,
+            nodeLabel
+        }
+    },
+    saveNodeToLibrary: async function () {
+        const {nodeJson, nodeLabel} = await this.extractNodeData();
+
+        await LocalStorageManager.addItemToLibrary(nodeLabel, nodeJson);
 
         this.canvas.getCommandStack().execute(new DummyCommand()); // so Obsidian saves the library
     },

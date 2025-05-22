@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../variables.scss" as vars;
 
 .circuit-sketcher-core.modal-show {
@@ -50,7 +51,7 @@
                 color: vars.$circuit-sketcher-text-color-dark-background;
 
                 &:hover {
-                    color: darken(vars.$circuit-sketcher-text-color-dark-background, 20%);
+                    color: color.adjust(vars.$circuit-sketcher-text-color-dark-background, $lightness: -20%);
                 }
             }
 
@@ -84,6 +85,6 @@
     cursor: pointer;
 
     &:hover {
-        color: darken(vars.$circuit-sketcher-text-color-secondary-dark-background, 20%);
+        color: color.adjust(vars.$circuit-sketcher-text-color-secondary-dark-background, $lightness: -20%);
     }
 }

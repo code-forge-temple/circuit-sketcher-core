@@ -24,4 +24,6 @@ export declare const isWithinVirtualBoundary: (figure: any, OFFSET: number, coor
     };
 };
 export declare const createConnection: (sourcePort: any, targetPort: any) => any;
+export declare const exportJsonFile: (nodeData: Record<string, any>, fileName: string) => void;
+export declare const importJsonFile: () => Promise<unknown>;
 export declare const DEFAULT_LABEL_NAME = "label-name";

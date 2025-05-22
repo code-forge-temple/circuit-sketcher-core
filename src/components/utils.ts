@@ -92,4 +92,59 @@ export const createConnection = function (sourcePort: any, targetPort: any) {
     return connection;
 };
 
+export const exportJsonFile = (nodeData: Record<string, any>, fileName: string) => {
+    // eslint-disable-next-line no-control-regex
+    const safeFileName = fileName.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_");
+    const blob = new Blob([JSON.stringify(nodeData, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `${safeFileName}.json`;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+    a.remove();
+}
+
+export const importJsonFile = () => {
+    return new Promise((resolve, reject) => {
+        const fileInput = document.createElement("input");
+
+        fileInput.type = "file";
+        fileInput.accept = ".json";
+        fileInput.onchange = (event) => {
+            const target = event.target as HTMLInputElement;
+
+            if (target.files && target.files.length > 0) {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const content = e.target?.result;
+
+                    if (content) {
+                        try {
+                            resolve(JSON.parse(content as string));
+                        } catch (error) {
+                            console.error("Error parsing JSON:", error);
+
+                            reject(error);
+                        } finally {
+                            fileInput.remove();
+                        }
+                    }
+                };
+
+                reader.readAsText(target.files[0]);
+            }
+        };
+
+        fileInput.click();
+    });
+}
+
 export const DEFAULT_LABEL_NAME = "label-name";

@@ -10,6 +10,7 @@ import {positionSubmenu} from "../../../utils";
 import "./nodeMenu.scss";
 
 type SaveNodeToLibrary = () => void;
+type ExportNode = () => void;
 type RemoveNode = () => void;
 type ChangeImage = () => void;
 type GetLockedPorts = () => boolean;
@@ -24,11 +25,11 @@ export const PORT_TYPE = {
 
 export type PortType = (typeof PORT_TYPE)[keyof typeof PORT_TYPE];
 
-type MenuKeys = AddPortMenuKey | "save_node_to_library" | "remove_node" | "change_image" | "lock_ports_relocation" | "unlock_ports_relocation";
+type MenuKeys = AddPortMenuKey | "export_node" | "save_node_to_library" | "remove_node" | "change_image" | "lock_ports_relocation" | "unlock_ports_relocation";
 
 type AddPortMenuKey = `${Side}_${PortType}`;
 
-export const nodeMenu = (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, removeNode: RemoveNode) =>
+export const nodeMenu = (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, exportNode: ExportNode, removeNode: RemoveNode) =>
     (x: number, y: number) => {
         return $.contextMenu({
             selector: "body",
@@ -42,6 +43,8 @@ export const nodeMenu = (addPortOnSide: AddPortOnSide, getLockedPorts: GetLocked
                     removeNode();
                 } else if (key === "save_node_to_library") {
                     saveNodeToLibrary();
+                } else if (key === "export_node") {
+                    exportNode();
                 } else if (key === "change_image") {
                     changeImage();
                 } else if (key === "lock_ports_relocation" || key === "unlock_ports_relocation") {
@@ -84,40 +87,44 @@ const nodeMenuItems = (getLockedPorts: GetLockedPorts) => {
 
     return {
         add_port: {
-            name: "Add Port",
+            name: "Add Port...",
             className: "context-menu-icon-add-port",
             items: {
                 left: {
                     name: "Left",
                     items: {
-                        [`${SIDE.LEFT}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${SIDE.LEFT}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${SIDE.LEFT}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-left-io"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-left-in"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-left-out"},
                     },
+                    className: "context-menu-icon-left",
                 },
                 top: {
                     name: "Top",
                     items: {
-                        [`${SIDE.TOP}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${SIDE.TOP}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${SIDE.TOP}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.TOP}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-top-io"},
+                        [`${SIDE.TOP}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-top-in"},
+                        [`${SIDE.TOP}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-top-out"},
                     },
+                    className: "context-menu-icon-top",
                 },
                 right: {
                     name: "Right",
                     items: {
-                        [`${SIDE.RIGHT}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${SIDE.RIGHT}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${SIDE.RIGHT}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-right-io"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-right-in"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-right-out"},
                     },
+                    className: "context-menu-icon-right",
                 },
                 bottom: {
                     name: "Bottom",
                     items: {
-                        [`${SIDE.BOTTOM}_${PORT_TYPE.IO}`]: {name: "IO"},
-                        [`${SIDE.BOTTOM}_${PORT_TYPE.IN}`]: {name: "In"},
-                        [`${SIDE.BOTTOM}_${PORT_TYPE.OUT}`]: {name: "Out"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-bottom-io"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-bottom-in"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-bottom-out"},
                     },
+                    className: "context-menu-icon-bottom",
                 },
             },
         },
@@ -129,6 +136,10 @@ const nodeMenuItems = (getLockedPorts: GetLockedPorts) => {
         save_node_to_library: {
             name: "Save Node to Library",
             className: "context-menu-icon-save-node-to-library",
+        },
+        export_node: {
+            name: "Export Node",
+            className: "context-menu-icon-export-node",
         },
         remove_node: {
             name: "Remove Node",

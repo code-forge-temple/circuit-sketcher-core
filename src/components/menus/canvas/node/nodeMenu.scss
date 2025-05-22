@@ -1,77 +1,125 @@
+@use '../../../mixins' as mixins;
+
 .context-menu-icon-add-port>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../../assets/data-transfer-both.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
 }
 
 .context-menu-icon-change-image>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../../assets/media-image-plus.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
 }
 
 .context-menu-icon-save-node-to-library>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../../assets/floppy-disk-blue.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
 }
 
 .context-menu-icon-remove-node>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../../assets/trash.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
 }
 
 .context-menu-icon-unlock-ports>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../../assets/lock-slash.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
 }
 
 .context-menu-icon-lock-ports>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../../assets/lock.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
+}
+
+.context-menu-icon-export-node>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/export.svg');
+}
+
+.context-menu-icon-left>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/border-left.svg');
+}
+
+.context-menu-icon-right>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/border-right.svg');
+}
+
+.context-menu-icon-top>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/border-top.svg');
+}
+
+.context-menu-icon-bottom>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/border-bottom.svg');
+}
+
+.context-menu-icon-add-port-left-io>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/io.svg');
+    transform: rotate(180deg);
+}
+
+.context-menu-icon-add-port-left-in>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/in.svg');
+    transform: rotate(180deg);
+}
+
+.context-menu-icon-add-port-left-out>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/out.svg');
+    transform: rotate(180deg);
+}
+
+.context-menu-icon-add-port-top-io>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/io.svg');
+    transform: rotate(-90deg);
+}
+
+.context-menu-icon-add-port-top-in>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/in.svg');
+    transform: rotate(-90deg);
+}
+
+.context-menu-icon-add-port-top-out>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/out.svg');
+    transform: rotate(-90deg);
+}
+
+.context-menu-icon-add-port-bottom-io>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/io.svg');
+    transform: rotate(90deg);
+}
+
+.context-menu-icon-add-port-bottom-in>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/in.svg');
+    transform: rotate(90deg);
+}
+
+.context-menu-icon-add-port-bottom-out>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/out.svg');
+    transform: rotate(90deg);
+}
+
+.context-menu-icon-add-port-right-io>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/io.svg');
+}
+
+.context-menu-icon-add-port-right-in>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/in.svg');
+}
+
+.context-menu-icon-add-port-right-out>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/out.svg');
 }

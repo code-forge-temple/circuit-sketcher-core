@@ -35,8 +35,9 @@ export declare class CanvasManager extends ObserverCanvas {
     private reload;
     private setup;
     private createNode;
-    private addNodeFromLib;
+    private addNodeToCanvas;
     private removeNodeFromLib;
+    private importLibrary;
     setNodeImage: (nodeId: string, imgSrc: string) => void;
     toJson: () => Promise<object[]>;
     toPng: () => Promise<string>;

@@ -11,13 +11,11 @@ type LocalStorageData = {
     };
 };
 export declare class LocalStorageManager {
-    private static LOCAL_STORAGE_KEY;
-    private static getLocalStorageData;
-    private static setLocalStorageData;
-    static getLibrary(stringify: true): string;
-    static getLibrary(stringify?: false): LocalStorageData["library"];
-    static setLibrary(library: string): void;
-    static addItemToLibrary(key: string, value: Record<string, any> | undefined): void;
-    static removeItemFromLibrary(key: string): void;
+    static getLibrary(stringify: true): Promise<string>;
+    static getLibrary(stringify?: false): Promise<LocalStorageData["library"]>;
+    static setLibrary(library: string): Promise<void>;
+    static setLibrary(library: LocalStorageData["library"]): Promise<void>;
+    static addItemToLibrary(key: string, value: Record<string, any> | undefined): Promise<void>;
+    static removeItemFromLibrary(key: string): Promise<void>;
 }
 export {};

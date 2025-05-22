@@ -10,9 +10,9 @@
     font-family: inherit;
     font-size: inherit;
     list-style-type: none;
-    background: #fff;
-    border: 1px solid #bebebe;
-    border-radius: .2em;
+    background: #303030;
+    border: 2px solid #303030;
+    border-radius: 5px;
     -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, .5);
     box-shadow: 0 2px 5px rgba(0, 0, 0, .5);
     font-family: vars.$circuit-sketcher-font;
@@ -24,18 +24,29 @@
     -moz-box-sizing: content-box;
     box-sizing: content-box;
     padding: .2em 2em;
-    color: #2f2f2f;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    background-color: #fff;
+    background: #303030;
+    color: #d7d7d7;
+}
+
+.context-menu-item-hidden {
+    visibility: hidden;
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border-top: none;
+    border-bottom: none;
 }
 
 .context-menu-separator {
     padding: 0;
     margin: .35em 0;
-    border-bottom: 1px solid #e6e6e6;
+    border-bottom: 1px solid #5e5e5e;
 }
 
 .context-menu-item>label>input,
@@ -46,21 +57,14 @@
     user-select: text;
 }
 
-.context-menu-item.context-menu-hover {
-    color: #fff;
-    cursor: pointer;
-    background-color: #2980b9;
+.context-menu-item.hover {
+    border-radius: 3px;
 }
 
 .context-menu-item.context-menu-disabled {
     color: #bbb;
     cursor: default;
     background-color: #fff;
-}
-
-.context-menu-input.context-menu-hover {
-    color: #2f2f2f;
-    cursor: default;
 }
 
 .context-menu-submenu:after {
@@ -71,7 +75,7 @@
     width: 0;
     height: 0;
     content: '';
-    border-color: transparent transparent transparent #2f2f2f;
+    border-color: transparent transparent transparent #5e5e5e;
     border-style: solid;
     border-width: .25em 0 .25em .25em;
     -webkit-transform: translateY(-50%);

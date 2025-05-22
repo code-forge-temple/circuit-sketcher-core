@@ -1,25 +1,58 @@
-.context-menu-icon-add-node-from-lib>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+@use '../../mixins' as mixins;
+
+
+.context-menu-icon-library>span::before {
+    @include mixins.context-menu-icon;
     background-image: url('../../../assets/book-stack.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
 }
 
 .context-menu-icon-create-node>span::before {
-    content: '';
-    display: inline-block;
-    width: 22px;
-    height: 22px;
+    @include mixins.context-menu-icon;
     background-image: url('../../../assets/server-connection.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    vertical-align: middle;
-    position: absolute;
-    left: 5px;
+}
+
+.context-menu-icon-import-node>span::before,
+.context-menu-icon-lib-import-library>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/import.svg');
+}
+
+.context-menu-icon-lib-node>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/cpu.svg');
+    width: 15px;
+    height: 15px;
+    top:5px;
+}
+
+.context-menu-icon-lib-scroll-up>span::before  {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/nav-arrow-up-solid.svg');
+    width: 15px;
+    height: 15px;
+    top:5px;
+}
+
+.context-menu-icon-lib-scroll-down>span::before  {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/nav-arrow-down-solid.svg');
+    width: 15px;
+    height: 15px;
+    top:5px;
+}
+
+.context-menu-icon-lib-export-node>span::before,
+.context-menu-icon-lib-export-library>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/export.svg');
+}
+
+.context-menu-icon-lib-add-node-from-lib>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/frame-plus-in.svg');
+}
+
+.context-menu-icon-lib-remove-node-from-lib>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/trash.svg');
 }

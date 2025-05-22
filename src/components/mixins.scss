@@ -1,0 +1,11 @@
+@mixin context-menu-icon {
+    content: '';
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    position: absolute;
+    left: 5px;
+}

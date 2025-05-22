@@ -93,7 +93,7 @@ export class CanvasManager extends ObserverCanvas {
     }
 
     public loadCanvasMenu = () => {
-        this.openMenu = canvasMenu(this.createNode, this.addNodeFromLib, this.removeNodeFromLib);
+        this.openMenu = canvasMenu(this.createNode, this.addNodeToCanvas, this.removeNodeFromLib, this.importLibrary);
     }
 
     public static destroy = () => {
@@ -170,7 +170,7 @@ export class CanvasManager extends ObserverCanvas {
         this.canvas.getCommandStack().execute(command);
     }
 
-    private addNodeFromLib = ({x, y, nodeJson}: {x: number; y: number; nodeJson: Record<string, any>}): void => {
+    private addNodeToCanvas = ({x, y, nodeJson}: {x: number; y: number; nodeJson: Record<string, any>}): void => {
         nodeJson.x = x;
         nodeJson.y = y;
         nodeJson.id = draw2d.util.UUID.create();
@@ -193,10 +193,37 @@ export class CanvasManager extends ObserverCanvas {
         this.canvas.getCommandStack().execute(command);
     }
 
-    private removeNodeFromLib = (libKey: string): void => {
-        LocalStorageManager.removeItemFromLibrary(libKey);
+    private removeNodeFromLib = async (libKey: string): Promise<void> => {
+        await LocalStorageManager.removeItemFromLibrary(libKey);
 
         this.loadCanvasMenu();
+
+        this.canvas.getCommandStack().execute(new DummyCommand());
+    }
+
+    private importLibrary = async (libraryToBeImported: Record<string, any>): Promise<void> => {
+        const library = await LocalStorageManager.getLibrary();
+
+        Object.keys(libraryToBeImported).forEach((key) => {
+            if(library[key] === undefined) {
+                library[key] = libraryToBeImported[key];
+            } else {
+                let counter = 1;
+                let newKey = `${key} ${counter}`;
+
+                while(library[newKey] !== undefined) {
+                    newKey = `${key} ${++counter}`;
+                }
+
+                libraryToBeImported[key].labels[0].text = newKey;
+                libraryToBeImported[key].id = draw2d.util.UUID.create();
+
+                library[newKey] = libraryToBeImported[key];
+            }
+
+        });
+
+        LocalStorageManager.setLibrary(library);
 
         this.canvas.getCommandStack().execute(new DummyCommand());
     }

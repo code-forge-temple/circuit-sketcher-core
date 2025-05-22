@@ -9,11 +9,12 @@ type CreateNode = ({ x, y }: {
     x: number;
     y: number;
 }) => void;
-type AddNodeFromLib = ({ x, y, nodeJson }: {
+type AddNodeToCanvas = ({ x, y, nodeJson }: {
     x: number;
     y: number;
     nodeJson: Record<string, any>;
 }) => void;
 type RemoveNodeFromLib = (libKey: string) => void;
-export declare const canvasMenu: (createNode: CreateNode, addNodeFromLib: AddNodeFromLib, removeNodeFromLib: RemoveNodeFromLib) => (x: number, y: number) => void;
+type ImportLibrary = (library: Record<string, any>) => void;
+export declare const canvasMenu: (createNode: CreateNode, addNodeToCanvas: AddNodeToCanvas, removeNodeFromLib: RemoveNodeFromLib, importLibrary: ImportLibrary) => (x: number, y: number) => Promise<void>;
 export {};

@@ -6,6 +6,7 @@
  ************************************************************************/
 import "./nodeMenu.scss";
 type SaveNodeToLibrary = () => void;
+type ExportNode = () => void;
 type RemoveNode = () => void;
 type ChangeImage = () => void;
 type GetLockedPorts = () => boolean;
@@ -17,5 +18,5 @@ export declare const PORT_TYPE: {
     readonly IO: "io";
 };
 export type PortType = (typeof PORT_TYPE)[keyof typeof PORT_TYPE];
-export declare const nodeMenu: (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, removeNode: RemoveNode) => (x: number, y: number) => void;
+export declare const nodeMenu: (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, exportNode: ExportNode, removeNode: RemoveNode) => (x: number, y: number) => void;
 export {};

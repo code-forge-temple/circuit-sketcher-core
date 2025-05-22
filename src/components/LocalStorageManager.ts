@@ -5,6 +5,8 @@
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
 
+import {openDB} from 'idb';
+
 type Draw2dStringifiedNode = Record<string, any>;
 
 type LocalStorageData = {
@@ -13,52 +15,67 @@ type LocalStorageData = {
     }
 };
 
+const DB_NAME = 'circuit-sketcher';
+const STORE_NAME = 'library';
+
+const dbPromise = openDB(DB_NAME, 1, {
+    upgrade (db) {
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+        }
+    }
+});
+
 export class LocalStorageManager {
-    private static LOCAL_STORAGE_KEY = "circuit-sketcher";
+    public static async getLibrary(stringify: true): Promise<string>;
+    public static async getLibrary(stringify?: false): Promise<LocalStorageData["library"]>;
+    public static async getLibrary (stringify?: boolean): Promise<string | LocalStorageData["library"]> {
+        const db = await dbPromise;
+        const allKeys = await db.getAllKeys(STORE_NAME);
+        const entries = await Promise.all(allKeys.map(async key => [key, await db.get(STORE_NAME, key)]));
+        const library = Object.fromEntries(entries);
 
-    private static getLocalStorageData (): LocalStorageData {
-        const data = window.localStorage.getItem(LocalStorageManager.LOCAL_STORAGE_KEY);
-        return data ? JSON.parse(data) : {library: {}};
-    }
-
-    private static setLocalStorageData (data: LocalStorageData): void {
-        window.localStorage.setItem(LocalStorageManager.LOCAL_STORAGE_KEY, JSON.stringify(data));
-    }
-
-    public static getLibrary(stringify: true): string;
-    public static getLibrary(stringify?: false): LocalStorageData["library"];
-
-    public static getLibrary (stringify?: boolean): string | LocalStorageData["library"] {
-        if (stringify === true) {
-            return JSON.stringify(LocalStorageManager.getLocalStorageData().library) as any;
+        if (stringify) {
+            return JSON.stringify(library);
         }
 
-        return LocalStorageManager.getLocalStorageData().library as any;
+        return library;
     }
 
-    public static setLibrary (library: string): void {
-        const data = LocalStorageManager.getLocalStorageData();
+    public static async setLibrary(library: string): Promise<void>;
+    public static async setLibrary(library: LocalStorageData["library"]): Promise<void>;
+    public static async setLibrary (library: string | LocalStorageData["library"]): Promise<void> {
+        let libObj: LocalStorageData["library"];
 
-        data.library = JSON.parse(library);
+        if (typeof library === "string") {
+            libObj = JSON.parse(library);
+        } else {
+            libObj = library;
+        }
 
-        LocalStorageManager.setLocalStorageData(data);
+        const db = await dbPromise;
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+
+        await tx.store.clear();
+
+        for (const [key, value] of Object.entries(libObj)) {
+            await tx.store.put(value, key);
+        }
+
+        await tx.done;
     }
 
-    public static addItemToLibrary (key: string, value: Record<string, any> | undefined): void {
+    public static async addItemToLibrary (key: string, value: Record<string, any> | undefined): Promise<void> {
         if (!value) return;
 
-        const data = LocalStorageManager.getLocalStorageData();
+        const db = await dbPromise;
 
-        data.library[key] = value;
-
-        LocalStorageManager.setLocalStorageData(data);
+        await db.put(STORE_NAME, value, key);
     }
 
-    public static removeItemFromLibrary (key: string): void {
-        const data = LocalStorageManager.getLocalStorageData();
+    public static async removeItemFromLibrary (key: string): Promise<void> {
+        const db = await dbPromise;
 
-        delete data.library[key];
-
-        LocalStorageManager.setLocalStorageData(data);
+        await db.delete(STORE_NAME, key);
     }
 }
