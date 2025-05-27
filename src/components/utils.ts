@@ -95,7 +95,7 @@ export const createConnection = function (sourcePort: any, targetPort: any) {
 export const exportJsonFile = (nodeData: Record<string, any>, fileName: string) => {
     // eslint-disable-next-line no-control-regex
     const safeFileName = fileName.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_");
-    const blob = new Blob([JSON.stringify(nodeData, null, 2)], {type: "application/json"});
+    const blob = new Blob([JSON.stringify(nodeData, null, 4)], {type: "application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
 
