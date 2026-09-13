@@ -25,6 +25,15 @@ export const PORT_TYPE = {
 
 export type PortType = (typeof PORT_TYPE)[keyof typeof PORT_TYPE];
 
+/* Display names for the port types. Shared with the port hover tooltip so the two can't
+ * drift apart - what the menu calls a port is what the tooltip calls it.
+ */
+export const PORT_TYPE_NAME: Record<PortType, string> = {
+    [PORT_TYPE.IN]: "In",
+    [PORT_TYPE.OUT]: "Out",
+    [PORT_TYPE.IO]: "IO",
+};
+
 type MenuKeys = AddPortMenuKey | "export_node" | "save_node_to_library" | "remove_node" | "change_image" | "lock_ports_relocation" | "unlock_ports_relocation";
 
 type AddPortMenuKey = `${Side}_${PortType}`;
@@ -93,36 +102,36 @@ const nodeMenuItems = (getLockedPorts: GetLockedPorts) => {
                 left: {
                     name: "Left",
                     items: {
-                        [`${SIDE.LEFT}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-left-io"},
-                        [`${SIDE.LEFT}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-left-in"},
-                        [`${SIDE.LEFT}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-left-out"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.IO}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IO], className: "context-menu-icon-add-port-left-io"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.IN}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IN], className: "context-menu-icon-add-port-left-in"},
+                        [`${SIDE.LEFT}_${PORT_TYPE.OUT}`]: {name: PORT_TYPE_NAME[PORT_TYPE.OUT], className: "context-menu-icon-add-port-left-out"},
                     },
                     className: "context-menu-icon-left",
                 },
                 top: {
                     name: "Top",
                     items: {
-                        [`${SIDE.TOP}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-top-io"},
-                        [`${SIDE.TOP}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-top-in"},
-                        [`${SIDE.TOP}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-top-out"},
+                        [`${SIDE.TOP}_${PORT_TYPE.IO}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IO], className: "context-menu-icon-add-port-top-io"},
+                        [`${SIDE.TOP}_${PORT_TYPE.IN}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IN], className: "context-menu-icon-add-port-top-in"},
+                        [`${SIDE.TOP}_${PORT_TYPE.OUT}`]: {name: PORT_TYPE_NAME[PORT_TYPE.OUT], className: "context-menu-icon-add-port-top-out"},
                     },
                     className: "context-menu-icon-top",
                 },
                 right: {
                     name: "Right",
                     items: {
-                        [`${SIDE.RIGHT}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-right-io"},
-                        [`${SIDE.RIGHT}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-right-in"},
-                        [`${SIDE.RIGHT}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-right-out"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.IO}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IO], className: "context-menu-icon-add-port-right-io"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.IN}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IN], className: "context-menu-icon-add-port-right-in"},
+                        [`${SIDE.RIGHT}_${PORT_TYPE.OUT}`]: {name: PORT_TYPE_NAME[PORT_TYPE.OUT], className: "context-menu-icon-add-port-right-out"},
                     },
                     className: "context-menu-icon-right",
                 },
                 bottom: {
                     name: "Bottom",
                     items: {
-                        [`${SIDE.BOTTOM}_${PORT_TYPE.IO}`]: {name: "IO", className: "context-menu-icon-add-port-bottom-io"},
-                        [`${SIDE.BOTTOM}_${PORT_TYPE.IN}`]: {name: "In", className: "context-menu-icon-add-port-bottom-in"},
-                        [`${SIDE.BOTTOM}_${PORT_TYPE.OUT}`]: {name: "Out", className: "context-menu-icon-add-port-bottom-out"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.IO}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IO], className: "context-menu-icon-add-port-bottom-io"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.IN}`]: {name: PORT_TYPE_NAME[PORT_TYPE.IN], className: "context-menu-icon-add-port-bottom-in"},
+                        [`${SIDE.BOTTOM}_${PORT_TYPE.OUT}`]: {name: PORT_TYPE_NAME[PORT_TYPE.OUT], className: "context-menu-icon-add-port-bottom-out"},
                     },
                     className: "context-menu-icon-bottom",
                 },

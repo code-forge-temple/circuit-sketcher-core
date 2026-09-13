@@ -1,0 +1,37 @@
+/************************************************************************
+ *    Copyright (C) 2024 Code Forge Temple                              *
+ *    This file is part of circuit-sketcher-core project                *
+ *    Licensed under the GNU General Public License v3.0.               *
+ *    See the LICENSE file in the project root for more information.    *
+ ************************************************************************/
+
+@use "../variables.scss" as vars;
+
+.circuit-sketcher-core.port-tooltip {
+    position: fixed;
+    z-index: 10000; /* above the core modal (999) and the host app's canvas chrome */
+    padding: 3px 7px;
+    border-radius: 3px;
+    font-family: vars.$circuit-sketcher-font;
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: nowrap;
+    background-color: vars.$circuit-sketcher-button-background-color;
+    color: vars.$circuit-sketcher-text-color-dark-background;
+    border: 1px solid vars.$circuit-sketcher-highlight-color;
+
+    /* never let the tooltip itself become a hover target - it sits right next to the
+     * port it describes and would otherwise steal the mouseleave */
+    pointer-events: none;
+
+    /* hidden via visibility rather than display so it keeps its layout box and can be
+     * measured for centring before it is shown */
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 100ms ease-in-out;
+
+    &.port-tooltip-visible {
+        visibility: visible;
+        opacity: 1;
+    }
+}

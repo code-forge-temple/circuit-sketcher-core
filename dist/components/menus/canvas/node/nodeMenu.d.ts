@@ -18,5 +18,6 @@ export declare const PORT_TYPE: {
     readonly IO: "io";
 };
 export type PortType = (typeof PORT_TYPE)[keyof typeof PORT_TYPE];
+export declare const PORT_TYPE_NAME: Record<PortType, string>;
 export declare const nodeMenu: (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, exportNode: ExportNode, removeNode: RemoveNode) => (x: number, y: number) => void;
 export {};

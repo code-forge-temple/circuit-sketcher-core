@@ -11,6 +11,17 @@ import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
 import {CustomPortLabelLocator} from "./customLocator";
 import {Coords, PORT_LABEL_BACKGROUND_COLOR, SIDE} from "../types";
+import {hidePortTooltip, hidePortTooltipNow, showPortTooltip} from "../portTooltip/portTooltip";
+import {PORT_TYPE, PORT_TYPE_NAME, PortType} from "../menus/canvas/node/nodeMenu";
+
+/* Mirrors the switch in CustomBlock.addPortOnSide, so a port reports the same type the
+ * "Add Port..." menu used to create it.
+ */
+const PORT_CONSTRUCTOR_TYPES: Record<string, PortType> = {
+    CustomInputPort: PORT_TYPE.IN,
+    CustomOutputPort: PORT_TYPE.OUT,
+    CustomHybridPort: PORT_TYPE.IO,
+};
 
 const customPortFactory = (portConstructorName: string) => {
     let basePort;
@@ -29,6 +40,8 @@ const customPortFactory = (portConstructorName: string) => {
             throw new Error("Invalid port constructor name");
     }
 
+    const portTypeName = PORT_TYPE_NAME[PORT_CONSTRUCTOR_TYPES[portConstructorName]];
+
     return basePort.extend({
         NAME : `customDefinitions.customPorts.${portConstructorName}`,
         init: function () {
@@ -36,7 +49,16 @@ const customPortFactory = (portConstructorName: string) => {
 
             this.createContextMenu();
 
+            /* draw2d invokes listeners unbound, so keep arrow-bound handlers around -
+             * they are reused for the port's labels, which are hit-tested separately */
+            this.tooltipEnterHandler = () => this.showTypeTooltip();
+            this.tooltipLeaveHandler = () => hidePortTooltip();
+
+            this.attachTypeTooltip(this);
+
             this.on("dragstart", () => {
+                hidePortTooltipNow();
+
                 this.addVirtualBoundaryToParent();
             });
 
@@ -66,6 +88,29 @@ const customPortFactory = (portConstructorName: string) => {
                         this.getCanvas().add(connection);
                     }
                 }
+            });
+        },
+        /* Canvas.getBestFigure tests a port's children before the port itself, so hovering
+         * a port label reports the label as the hovered figure. Both need the handler for
+         * the tooltip to appear over the dot and over its label.
+         */
+        attachTypeTooltip: function (figure: any) {
+            figure.on("mouseenter", this.tooltipEnterHandler);
+            figure.on("mouseleave", this.tooltipLeaveHandler);
+        },
+        showTypeTooltip: function () {
+            const canvas = this.getCanvas();
+
+            if (!canvas || !portTypeName) return;
+
+            const {x, y} = this.getAbsolutePosition();
+            /* canvas -> document, which already accounts for zoom and canvas scrolling;
+             * the tooltip is position:fixed, so take out the page scroll as well */
+            const anchor = canvas.fromCanvasToDocumentCoordinate(x, y);
+
+            showPortTooltip(portTypeName, {
+                x: anchor.x - window.scrollX,
+                y: anchor.y - window.scrollY - this.getHeight() / 2,
             });
         },
         addVirtualBoundaryToParent: function () {
@@ -133,6 +178,8 @@ const customPortFactory = (portConstructorName: string) => {
 
                 // Add the new figure as child to this figure
                 this.add(figure, locator);
+
+                this.attachTypeTooltip(figure);
             });
         },
         getPersistentAttributes : function () {
@@ -195,6 +242,8 @@ const customPortFactory = (portConstructorName: string) => {
                     this.add(label, new CustomPortLabelLocator(SIDE.TOP));
                     break;
             }
+
+            this.attachTypeTooltip(label);
 
             label.repaint();
         },

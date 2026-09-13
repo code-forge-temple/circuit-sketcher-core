@@ -1,6 +1,13 @@
 {
     "compilerOptions": {
         "target": "ES6",
+        /* Needed for Object.values (ES2017) and Object.fromEntries (ES2019); an ES6
+         * target alone doesn't declare them. Affects type checking only, not output. */
+        "lib": [
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
+        ],
         "module": "commonjs",
         "declaration": true,
         "outDir": "./dist",
