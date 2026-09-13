@@ -1,0 +1,16 @@
+/************************************************************************
+ *    Copyright (C) 2024 Code Forge Temple                              *
+ *    This file is part of circuit-sketcher-core project                *
+ *    Licensed under the GNU General Public License v3.0.               *
+ *    See the LICENSE file in the project root for more information.    *
+ ************************************************************************/
+
+/* While panning, the svg is pointer-events:none (so stale coordinates can't drive
+ * draw2d's hover state) and the pointer is free to travel outside the canvas. Both
+ * would otherwise lose the grab cursor, so force it for the duration of the drag
+ * regardless of which element ends up being hit-tested.
+ */
+.circuit-sketcher-panning,
+.circuit-sketcher-panning * {
+    cursor: grabbing !important;
+}

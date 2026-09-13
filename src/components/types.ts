@@ -19,6 +19,12 @@ export type Coords = {
     y: number;
 };
 
+/* The resting background of a port label. Net highlighting swaps it for the connection
+ * colour, so this is also the value serialization falls back to - a highlight is view
+ * state and must never be written into a saved circuit.
+ */
+export const PORT_LABEL_BACKGROUND_COLOR = "#FFFFFF";
+
 
 export const LabelSchema = z.object({
     type: z.string(),

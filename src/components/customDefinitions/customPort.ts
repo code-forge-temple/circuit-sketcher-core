@@ -10,7 +10,7 @@ import {createConnection, DEFAULT_LABEL_NAME, getNestedConstructorInstanceFromPa
 import draw2d from "draw2d";
 import {DummyCommand} from "./customCommands";
 import {CustomPortLabelLocator} from "./customLocator";
-import {Coords, SIDE} from "../types";
+import {Coords, PORT_LABEL_BACKGROUND_COLOR, SIDE} from "../types";
 
 const customPortFactory = (portConstructorName: string) => {
     let basePort;
@@ -146,6 +146,10 @@ const customPortFactory = (portConstructorName: string) => {
             this.children.each((_i: number, e: any) => {
                 const json = e.figure.getPersistentAttributes();
 
+                /* net highlighting tints the label background; that's view state, so the
+                 * saved circuit always gets the resting colour back */
+                json.bgColor = PORT_LABEL_BACKGROUND_COLOR;
+
                 json.locator = e.locator.NAME;
 
                 if(e.locator.getPersistentAttributes) {
@@ -173,7 +177,7 @@ const customPortFactory = (portConstructorName: string) => {
 
             label.setColor("#000000");
             label.setFontColor("#000000");
-            label.setBackgroundColor("#ffffff");
+            label.setBackgroundColor(PORT_LABEL_BACKGROUND_COLOR);
             label.setStroke(0);
             label.installEditor(new draw2d.ui.LabelInplaceEditor());
 

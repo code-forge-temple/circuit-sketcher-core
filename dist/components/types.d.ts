@@ -14,6 +14,7 @@ export type Coords = {
     x: number;
     y: number;
 };
+export declare const PORT_LABEL_BACKGROUND_COLOR = "#FFFFFF";
 export declare const LabelSchema: z.ZodObject<{
     type: z.ZodString;
     id: z.ZodString;
