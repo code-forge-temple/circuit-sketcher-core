@@ -13,6 +13,9 @@ export abstract class ObserverCanvas extends DraggableCanvas {
     private listeners: (() => void)[] = [];
 
     public addChangeListener (callback: () => void) {
+        // setup() registers the change callback again on every reload
+        if (this.listeners.includes(callback)) return;
+
         this.listeners.push(callback);
     }
 

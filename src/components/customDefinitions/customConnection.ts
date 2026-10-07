@@ -34,7 +34,11 @@ export const CustomConnection = draw2d.Connection.extend({
         this.on("select", this.onSelect.bind(this));
         this.on("unselect", this.onUnselect.bind(this));
 
-        document.addEventListener("keydown", this.onKeyDown.bind(this));
+        /* Delete is handled by draw2d's DefaultKeyboardPolicy (through the command stack, so
+         * it is undoable and saved). Don't add a document listener per connection: nothing
+         * removes it, so it would keep every connection - and through its ports, the whole
+         * circuit - alive after a canvas rebuild.
+         */
     },
 
     /* An electrical net is the transitive closure over ports that share a connection:
@@ -124,16 +128,9 @@ export const CustomConnection = draw2d.Connection.extend({
 
         this.highlightedNet = null;
 
-        if (this.canvas) {
+        // the png export unselects only for the picture and reselects right away (see toPng)
+        if (this.canvas && !this.canvas.exportingImage) {
             this.canvas.getCommandStack().execute(new DummyCommand());
-        }
-    },
-
-    onKeyDown: function (event: KeyboardEvent) {
-        if (event.key === "Delete") {
-            if (this.isSelected()) {
-                this.getCanvas().remove(this);
-            }
         }
     }
 });

@@ -98,6 +98,7 @@ export class CanvasManager extends ObserverCanvas {
 
     public static destroy = () => {
         if(CanvasManager.instance){
+            CanvasManager.instance.unload();
             CanvasManager.instance = null;
         }
     }
@@ -107,6 +108,17 @@ export class CanvasManager extends ObserverCanvas {
         this.canvas.getCommandStack().removeEventListener(this.triggerChange);
         this.canvas.clear();
         this.canvas.destroy();
+
+        /* draw2d's destroy() leaves the mouse handlers and the droppable it put on the canvas
+         * element, and a reload reuses that element - each one would keep the old canvas alive
+         */
+        const html = this.canvas.html;
+
+        if (html.droppable("instance")) {
+            html.droppable("destroy");
+        }
+
+        html.off();
     }
 
     private reload = () => {
@@ -304,13 +316,61 @@ export class CanvasManager extends ObserverCanvas {
                     h: Math.ceil(maxY - minY) + 2 * PADDING
                 };
 
-                writer.marshal(this.canvas, (png: string) => {
-                    resolve(png);
-                }, area);
+                /* draw2d's png writer unselects and reselects the selection to keep its handles
+                 * out of the picture - flag it, so that isn't taken for an edit (a change would
+                 * request another save, which exports the png again: an endless save loop)
+                 */
+                this.canvas.exportingImage = true;
+
+                try {
+                    writer.marshal(this.canvas, (png: string) => {
+                        resolve(png);
+                    }, area);
+                } finally {
+                    this.canvas.exportingImage = false;
+                }
             } catch (err) {
                 reject(err);
             }
         });
+    }
+
+    /* Fits the drawing area to the canvas element after the element changed size. It only
+     * resizes the svg, so it is cheap and keeps the figures, selection and undo history -
+     * unlike rebuilding the canvas through stringify() + parse().
+     */
+    public resize = () => {
+        const width = this.canvasElement.clientWidth;
+        const height = this.canvasElement.clientHeight;
+
+        // a hidden view measures 0x0; keep the last real size until it is shown again
+        if (width <= 0 || height <= 0) return;
+
+        /* created while hidden: draw2d measured every label as 0x0, so lay the circuit out
+         * once more now that it is visible - from the last saved state, as opening it would */
+        if (!this.canvas.initialWidth || !this.canvas.initialHeight) {
+            this.parse(this.jsonCanvas);
+
+            return;
+        }
+
+        if (width === this.canvas.initialWidth && height === this.canvas.initialHeight) return;
+
+        const zoom = this.canvas.zoomFactor || 1;
+
+        this.canvas.initialWidth = width;
+        this.canvas.initialHeight = height;
+
+        this.canvas.paper.setSize(width, height);
+
+        /* setSize re-applies the previous viewBox (set by a pan or a zoom), which would
+         * stretch the scene over the new size - match it to the new size instead */
+        if (this.canvas.paper._viewBox) {
+            this.canvas.paper.setViewBox(0, 0, width * zoom, height * zoom);
+        }
+
+        // figures can't be dragged outside this region, it was sized when the canvas was created
+        this.canvas.regionDragDropConstraint.setBoundingBox(new draw2d.geo.Rectangle(0, 0, width, height));
     }
 
     public stringify<T extends boolean | undefined>(sync?: T): T extends true ? string : Promise<string>;
