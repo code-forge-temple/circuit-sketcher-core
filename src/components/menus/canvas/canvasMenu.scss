@@ -11,8 +11,7 @@
     background-image: url('../../../assets/server-connection.svg');
 }
 
-.context-menu-icon-import-node>span::before,
-.context-menu-icon-lib-import-library>span::before {
+.context-menu-icon-import-node>span::before {
     @include mixins.context-menu-icon;
     background-image: url('../../../assets/import.svg');
 }
@@ -20,6 +19,22 @@
 .context-menu-icon-lib-node>span::before {
     @include mixins.context-menu-icon;
     background-image: url('../../../assets/cpu.svg');
+    width: 15px;
+    height: 15px;
+    top:5px;
+}
+
+.context-menu-icon-lib-group>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/folder.svg');
+    width: 15px;
+    height: 15px;
+    top:5px;
+}
+
+.context-menu-icon-lib-manage>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/edit-pencil.svg');
     width: 15px;
     height: 15px;
     top:5px;
@@ -41,8 +56,7 @@
     top:5px;
 }
 
-.context-menu-icon-lib-export-node>span::before,
-.context-menu-icon-lib-export-library>span::before {
+.context-menu-icon-lib-export-node>span::before {
     @include mixins.context-menu-icon;
     background-image: url('../../../assets/export.svg');
 }

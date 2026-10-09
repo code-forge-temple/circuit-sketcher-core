@@ -73,6 +73,12 @@ export const CustomBlockSchema = z.object({
     path: z.string(),
     labels: z.array(LabelSchema),
     lockedPorts: z.boolean(),
+    /* library group path such as "Power/Sources" - optional, so library files written before
+     * groups existed (circuit-sketcher-lib included) still validate. Unlisted fields would be
+     * stripped by zod on import, so it has to be declared here. */
+    group: z.string().optional(),
+    // clockwise quarter turns of the image in degrees, written only once a block is turned
+    imageRotation: z.number().optional(),
 });
 
 export type LibrarySchema = z.infer<typeof LibrarySchemaSchema>;

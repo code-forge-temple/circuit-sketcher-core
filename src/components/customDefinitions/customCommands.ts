@@ -28,3 +28,47 @@ export const DummyCommand = draw2d.command.Command.extend({
 
     redo: function () {},
 });
+
+/** CommandRotateBlock
+ * Turns a CustomBlock by quarter turns clockwise (1 clockwise, 3 counterclockwise). Its wires get
+ * routed afresh for the ports' new sides; undo turns it back and puts every wire back exactly as it
+ * was routed before.
+ */
+export const CommandRotateBlock = draw2d.command.Command.extend({
+    NAME: "customDefinitions.CommandRotateBlock",
+
+    init: function (block: any, quarterTurns: number) {
+        this._super("Rotate");
+
+        this.block = block;
+        this.quarterTurns = quarterTurns;
+        this.position = block.getPosition();
+        this.routes = block.getConnections().asArray().map((connection: any) => ({
+            connection,
+            vertices: connection.getVertices().clone(true),
+            routing: {...connection._routingMetaData},
+        }));
+    },
+
+    canExecute: function () { return true; },
+
+    execute: function () {
+        this.block.rotate(this.quarterTurns);
+    },
+
+    undo: function () {
+        this.block.rotate(-this.quarterTurns);
+
+        // turning near the canvas edge may have moved it inside; it goes back exactly where it was
+        this.block.withoutRegionConstraint(() => this.block.setPosition(this.position.x, this.position.y));
+
+        this.routes.forEach(({connection, vertices, routing}: {connection: any; vertices: any; routing: Record<string, any>}) => {
+            connection.setVertices(vertices.clone(true));
+            connection._routingMetaData = {...routing};
+        });
+    },
+
+    redo: function () {
+        this.block.rotate(this.quarterTurns);
+    },
+});

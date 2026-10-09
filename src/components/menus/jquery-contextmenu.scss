@@ -57,14 +57,15 @@
     user-select: text;
 }
 
-.context-menu-item.hover {
+.context-menu-item.context-menu-hover {
+    cursor: pointer;
+    background-color: #39F;
     border-radius: 3px;
 }
 
 .context-menu-item.context-menu-disabled {
-    color: #bbb;
+    color: #666;
     cursor: default;
-    background-color: #fff;
 }
 
 .context-menu-submenu:after {

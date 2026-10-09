@@ -1,0 +1,188 @@
+@use "sass:color";
+@use "../variables.scss" as vars;
+
+.circuit-sketcher-core.lm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background-color: rgb(0 0 0 / 25%);
+    color: vars.$circuit-sketcher-text-color-dark-background;
+    font-family: vars.$circuit-sketcher-font;
+    font-size: 13px;
+
+    .lm-dialog {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        width: min(720px, 92vw);
+        max-height: 80vh;
+        padding: 1em;
+        background: #262626;
+        border-radius: .5rem;
+        box-sizing: border-box;
+    }
+
+    h1 {
+        font-size: 150%;
+        margin: 0 0 15px;
+    }
+
+    .lm-close {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 70px;
+        line-height: 50px;
+        font-size: 80%;
+        text-align: center;
+        color: vars.$circuit-sketcher-text-color-secondary-dark-background;
+        cursor: pointer;
+
+        &:hover {
+            color: color.adjust(vars.$circuit-sketcher-text-color-secondary-dark-background, $lightness: -20%);
+        }
+    }
+
+    button,
+    input {
+        height: auto;
+        margin: 0;
+        padding: 2px 8px;
+        border: 1px solid #444;
+        border-radius: 4px;
+        box-shadow: none;
+        background-color: vars.$circuit-sketcher-button-background-color;
+        color: vars.$circuit-sketcher-text-color-dark-background;
+        font: inherit;
+        line-height: 1.6;
+    }
+
+    button {
+        cursor: pointer;
+
+        &:hover {
+            color: color.adjust(vars.$circuit-sketcher-text-color-dark-background, $lightness: -20%);
+        }
+
+        &:disabled {
+            opacity: .4;
+            cursor: default;
+        }
+    }
+
+    input {
+        width: 220px;
+        background-color: #1b1b1b;
+    }
+
+    .lm-hint {
+        color: vars.$circuit-sketcher-text-color-secondary-dark-background;
+    }
+
+    .lm-message {
+        margin-bottom: 10px;
+        color: vars.$circuit-sketcher-highlight-color;
+    }
+
+    .lm-tree {
+        overflow: auto;
+        min-height: 120px;
+        border-top: 1px solid #3a3a3a;
+        padding-top: 6px;
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .lm-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding-right: 4px;
+        border-left: 2px solid transparent;
+        border-radius: 3px;
+
+        &:hover {
+            background-color: #303030;
+
+            .lm-actions {
+                visibility: visible;
+            }
+        }
+    }
+
+    .lm-group {
+        cursor: pointer;
+    }
+
+    .lm-row[draggable="true"] {
+        cursor: grab;
+    }
+
+    .lm-dragging {
+        opacity: .4;
+    }
+
+    // the group a drop would land in
+    .lm-drop,
+    .lm-drop:hover {
+        outline: 1px dashed vars.$circuit-sketcher-highlight-color;
+        outline-offset: -1px;
+        background-color: color.adjust(vars.$circuit-sketcher-highlight-color, $alpha: -0.8);
+    }
+
+    .lm-toggle {
+        width: 12px;
+        flex-shrink: 0;
+        text-align: center;
+        color: vars.$circuit-sketcher-text-color-secondary-dark-background;
+    }
+
+    .lm-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+    .lm-icon-group {
+        background-image: url('../../assets/folder.svg');
+    }
+
+    .lm-icon-component {
+        background-image: url('../../assets/cpu.svg');
+    }
+
+    .lm-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .lm-actions,
+    .lm-edit {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    // only on hover, so long lists stay readable
+    .lm-actions {
+        visibility: hidden;
+    }
+
+    .lm-hint {
+        padding: 4px 0;
+        font-style: italic;
+    }
+}

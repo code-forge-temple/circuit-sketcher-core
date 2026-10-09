@@ -6,7 +6,7 @@
  ************************************************************************/
 
 import {MenuItem} from '../../../../types';
-import {positionSubmenu} from '../../../../utils';
+import {openContextMenu, positionSubmenu} from '../../../../utils';
 import './portMenu.scss';
 
 type AddPortLabel = (port:any) => void;
@@ -16,8 +16,7 @@ type HasLabel = () => boolean;
 
 export const portMenu = (hasLabel: HasLabel, addPortLabel: AddPortLabel, removePortLabel: RemovePortLabel, removeCreatedPort: RemoveCreatedPort) =>
     (x: number, y: number) => {
-        return $.contextMenu({
-            selector: "body",
+        return openContextMenu({
             events: {
                 hide: function () {
                     $.contextMenu("destroy");

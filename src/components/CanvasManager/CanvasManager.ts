@@ -24,12 +24,21 @@ import {createConnection, labelBasicProps} from "../utils";
 import draw2d from "draw2d";
 import {LocalStorageManager} from "../LocalStorageManager";
 import {DummyCommand} from "../customDefinitions/customCommands";
+import {openLibraryManager} from "../LibraryManager";
 
 (window as any).draw2d = draw2d;
 
 
 import {ObserverCanvas} from "./ObserverCanvas";
+import {contentBounds} from "./contentBounds";
 import {Coords} from "../types";
+
+const IDENTITY_MATRIX = "matrix(1,0,0,1,0,0)";
+
+/* The circuit file's entry for the zoom it was left at. Not a draw2d figure: versions from before it
+ * existed log it as an unknown type, skip it, and open at 100%.
+ */
+const VIEW_ENTRY_TYPE = "customDefinitions.CanvasView";
 
 export class CanvasManager extends ObserverCanvas {
     private static instance: CanvasManager | null;
@@ -70,6 +79,13 @@ export class CanvasManager extends ObserverCanvas {
         this.setup();
 
         this.addDragEventListeners();
+
+        this.canvasElement.addEventListener("contextmenu", this.preventBrowserMenu);
+    }
+
+    // our menus open from code (see openContextMenu), so the browser's own one is kept off the canvas
+    private preventBrowserMenu = (event: Event) => {
+        event.preventDefault();
     }
 
     public static setCanvasId (canvasId: string) {
@@ -93,7 +109,7 @@ export class CanvasManager extends ObserverCanvas {
     }
 
     public loadCanvasMenu = () => {
-        this.openMenu = canvasMenu(this.createNode, this.addNodeToCanvas, this.removeNodeFromLib, this.importLibrary);
+        this.openMenu = canvasMenu(this.createNode, this.addNodeToCanvas, this.removeNodeFromLib, this.manageLibrary);
     }
 
     public static destroy = () => {
@@ -105,6 +121,7 @@ export class CanvasManager extends ObserverCanvas {
 
     private unload = () => {
         this.removeDragEventListeners();
+        this.canvasElement.removeEventListener("contextmenu", this.preventBrowserMenu);
         this.canvas.getCommandStack().removeEventListener(this.triggerChange);
         this.canvas.clear();
         this.canvas.destroy();
@@ -129,8 +146,10 @@ export class CanvasManager extends ObserverCanvas {
     }
 
     private setup = () => {
-        this.canvas.on("contextmenu", (_emitter: any, {x, y}: Coords) => {
-            if (this.canvas.currentHoverFigure) return;
+        this.canvas.on("contextmenu", (_emitter: any, {figure, x, y}: Coords & {figure: any}) => {
+            /* only for the blank canvas - a figure under the pointer opens its own menu. draw2d tells us
+             * which one was hit; the hover state goes stale while a menu covers the canvas */
+            if (figure) return;
 
             const rect = this.canvasElement.getBoundingClientRect();
 
@@ -213,30 +232,13 @@ export class CanvasManager extends ObserverCanvas {
         this.canvas.getCommandStack().execute(new DummyCommand());
     }
 
-    private importLibrary = async (libraryToBeImported: Record<string, any>): Promise<void> => {
-        const library = await LocalStorageManager.getLibrary();
+    private manageLibrary = () => {
+        /* the dialog can outlive this canvas (another file opened meanwhile), so its changes go
+         * to whichever canvas is current - the change event is what makes Obsidian save the library */
+        openLibraryManager(() => CanvasManager.instance?.libraryChanged());
+    }
 
-        Object.keys(libraryToBeImported).forEach((key) => {
-            if(library[key] === undefined) {
-                library[key] = libraryToBeImported[key];
-            } else {
-                let counter = 1;
-                let newKey = `${key} ${counter}`;
-
-                while(library[newKey] !== undefined) {
-                    newKey = `${key} ${++counter}`;
-                }
-
-                libraryToBeImported[key].labels[0].text = newKey;
-                libraryToBeImported[key].id = draw2d.util.UUID.create();
-
-                library[newKey] = libraryToBeImported[key];
-            }
-
-        });
-
-        LocalStorageManager.setLibrary(library);
-
+    private libraryChanged = () => {
         this.canvas.getCommandStack().execute(new DummyCommand());
     }
 
@@ -249,10 +251,17 @@ export class CanvasManager extends ObserverCanvas {
         }
     }
 
+    /* The circuit as saved: draw2d's figures, plus the zoom as one extra entry once it isn't 100%.
+     * Pans and zooms move the figures' coordinates (see DraggableCanvas), so they only show the
+     * circuit as it was left at the zoom they were saved with.
+     */
     public toJson = async (): Promise<object[]> => {
         return new Promise((resolve) => {
             this.writer.marshal(this.canvas, (json: any) => {
-                resolve(json);
+                const zoom = this.getZoom();
+
+                // a circuit at 100% is saved exactly as before the zoom existed
+                resolve(Math.abs(zoom - 1) > 1e-6 ? [...json, {type: VIEW_ENTRY_TYPE, zoom}] : json);
             });
         });
     }
@@ -261,52 +270,7 @@ export class CanvasManager extends ObserverCanvas {
         return new Promise((resolve, reject) => {
             try {
                 const writer = new draw2d.io.png.Writer();
-
-                const figures = this.canvas.getFigures();
-                const lines = this.canvas.getLines();
-                let minX = NaN, minY = NaN, maxX = NaN, maxY = NaN;
-
-                figures.each((_i: number, figure: any) => {
-                    const x = figure.getAbsoluteX ? figure.getAbsoluteX() : figure.x;
-                    const y = figure.getAbsoluteY ? figure.getAbsoluteY() : figure.y;
-                    const width = figure.getWidth();
-                    const height = figure.getHeight();
-
-                    minX = !isNaN(minX) ? Math.min(minX, x) : x;
-                    minY = !isNaN(minY) ? Math.min(minY, y) : y;
-                    maxX = !isNaN(maxX) ? Math.max(maxX, x + width) : x + width;
-                    maxY = !isNaN(maxY) ? Math.max(maxY, y + height) : y + height;
-
-                    if (figure.getChildren && typeof figure.getChildren === "function") {
-                        figure.getChildren().each((_j: number, child: any) => {
-                            const cx = child.getAbsoluteX ? child.getAbsoluteX() : child.x;
-                            const cy = child.getAbsoluteY ? child.getAbsoluteY() : child.y;
-                            const cwidth = child.getWidth();
-                            const cheight = child.getHeight();
-
-                            minX = !isNaN(minX) ? Math.min(minX, cx) : cx;
-                            minY = !isNaN(minY) ? Math.min(minY, cy) : cy;
-                            maxX = !isNaN(maxX) ? Math.max(maxX, cx + cwidth) : cx + cwidth;
-                            maxY = !isNaN(maxY) ? Math.max(maxY, cy + cheight) : cy + cheight;
-                        });
-                    }
-                });
-
-                lines.each((_i: number, line: any) => {
-                    line.getVertices().each((_j: number, vertex: any) => {
-                        const vx = vertex.x;
-                        const vy = vertex.y;
-
-                        minX = !isNaN(minX) ? Math.min(minX, vx) : vx;
-                        minY = !isNaN(minY) ? Math.min(minY, vy) : vy;
-                        maxX = !isNaN(maxX) ? Math.max(maxX, vx) : vx;
-                        maxY = !isNaN(maxY) ? Math.max(maxY, vy) : vy;
-                    });
-                });
-
-                if (isNaN(minX) || isNaN(minY) || isNaN(maxX) || isNaN(maxY)) {
-                    minX = 0; minY = 0; maxX = this.canvas.getWidth(); maxY = this.canvas.getHeight();
-                }
+                const {minX, minY, maxX, maxY} = contentBounds(this.canvas) ?? {minX: 0, minY: 0, maxX: this.canvas.getWidth(), maxY: this.canvas.getHeight()};
 
                 const PADDING = 20;
                 const area = {
@@ -322,11 +286,40 @@ export class CanvasManager extends ObserverCanvas {
                  */
                 this.canvas.exportingImage = true;
 
+                /* the writer draws the svg as it is shown - zoomed, and cut to what is in sight. For
+                 * the export, size it to the circuit at 1:1 instead (the writer reads the svg right
+                 * away, so it is back as it was before anything is painted)
+                 */
+                const paper = this.canvas.paper;
+                const {width, height} = paper;
+                const viewBox = paper._viewBox ? [...paper._viewBox] : [0, 0, width, height];
+                // mid-pan or mid-zoom the svg shows a viewBox Raphael doesn't know about (see DraggableCanvas.paintFrame)
+                const shownViewBox = paper.canvas.getAttribute("viewBox");
+
+                /* Raphael gives every gradient (the ports' fill) an identity gradientTransform, and for
+                 * one of those canvg paints the gradient as a pattern that covers only 0,0 to the image
+                 * size - a port at negative coordinates (after a pan or a zoom) would come out unfilled
+                 */
+                const identityTransforms = [...paper.canvas.querySelectorAll("[gradientTransform]")]
+                    .filter((gradient: Element) => gradient.getAttribute("gradientTransform") === IDENTITY_MATRIX);
+
+                paper.setSize(area.w, area.h);
+                paper.setViewBox(area.x, area.y, area.w, area.h);
+                identityTransforms.forEach((gradient) => gradient.removeAttribute("gradientTransform"));
+
                 try {
                     writer.marshal(this.canvas, (png: string) => {
                         resolve(png);
-                    }, area);
+                    }, {x: 0, y: 0, w: area.w, h: area.h});
                 } finally {
+                    identityTransforms.forEach((gradient) => gradient.setAttribute("gradientTransform", IDENTITY_MATRIX));
+                    paper.setSize(width, height);
+                    paper.setViewBox(...viewBox);
+
+                    if (shownViewBox) {
+                        paper.canvas.setAttribute("viewBox", shownViewBox);
+                    }
+
                     this.canvas.exportingImage = false;
                 }
             } catch (err) {
@@ -345,6 +338,9 @@ export class CanvasManager extends ObserverCanvas {
 
         // a hidden view measures 0x0; keep the last real size until it is shown again
         if (width <= 0 || height <= 0) return;
+
+        // a wheel zoom still settling is worked out for the old size
+        this.applyZoom();
 
         /* created while hidden: draw2d measured every label as 0x0, so lay the circuit out
          * once more now that it is visible - from the last saved state, as opening it would */
@@ -369,8 +365,8 @@ export class CanvasManager extends ObserverCanvas {
             this.canvas.paper.setViewBox(0, 0, width * zoom, height * zoom);
         }
 
-        // figures can't be dragged outside this region, it was sized when the canvas was created
-        this.canvas.regionDragDropConstraint.setBoundingBox(new draw2d.geo.Rectangle(0, 0, width, height));
+        // figures can't be dragged outside this region - what is in sight at the current zoom
+        this.canvas.regionDragDropConstraint.setBoundingBox(new draw2d.geo.Rectangle(0, 0, width * zoom, height * zoom));
     }
 
     public stringify<T extends boolean | undefined>(sync?: T): T extends true ? string : Promise<string>;
@@ -391,10 +387,19 @@ export class CanvasManager extends ObserverCanvas {
 
             this.jsonCanvas = json;
 
-            this.reader.unmarshal(this.canvas, parsedJson);
+            this.load(parsedJson);
         } catch {
-            this.reader.unmarshal(this.canvas, JSON.parse(this.jsonCanvas));
+            this.load(JSON.parse(this.jsonCanvas));
         }
+    }
+
+    // draw2d gets the figures; the view entry (see toJson) is ours - draw2d would log it as unknown
+    private load = (entries: any[]) => {
+        const view = entries.find((entry) => entry?.type === VIEW_ENTRY_TYPE);
+
+        this.reader.unmarshal(this.canvas, entries.filter((entry) => entry?.type !== VIEW_ENTRY_TYPE));
+
+        this.restoreZoom(view?.zoom ?? 1);
     }
 
     protected getCanvas = () => {

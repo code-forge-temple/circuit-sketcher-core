@@ -15,6 +15,6 @@ type AddNodeToCanvas = ({ x, y, nodeJson }: {
     nodeJson: Record<string, any>;
 }) => void;
 type RemoveNodeFromLib = (libKey: string) => void;
-type ImportLibrary = (library: Record<string, any>) => void;
-export declare const canvasMenu: (createNode: CreateNode, addNodeToCanvas: AddNodeToCanvas, removeNodeFromLib: RemoveNodeFromLib, importLibrary: ImportLibrary) => (x: number, y: number) => Promise<void>;
+type ManageLibrary = () => void;
+export declare const canvasMenu: (createNode: CreateNode, addNodeToCanvas: AddNodeToCanvas, removeNodeFromLib: RemoveNodeFromLib, manageLibrary: ManageLibrary) => (x: number, y: number) => Promise<void>;
 export {};

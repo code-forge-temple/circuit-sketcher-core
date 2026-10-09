@@ -9,6 +9,7 @@ type SaveNodeToLibrary = () => void;
 type ExportNode = () => void;
 type RemoveNode = () => void;
 type ChangeImage = () => void;
+type Rotate = (quarterTurns: number) => void;
 type GetLockedPorts = () => boolean;
 type SetLockedPorts = (lockedPorts: boolean) => void;
 type AddPortOnSide = (side: string, type: string) => void;
@@ -19,5 +20,5 @@ export declare const PORT_TYPE: {
 };
 export type PortType = (typeof PORT_TYPE)[keyof typeof PORT_TYPE];
 export declare const PORT_TYPE_NAME: Record<PortType, string>;
-export declare const nodeMenu: (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, exportNode: ExportNode, removeNode: RemoveNode) => (x: number, y: number) => void;
+export declare const nodeMenu: (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, rotate: Rotate, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, exportNode: ExportNode, removeNode: RemoveNode) => (x: number, y: number) => void;
 export {};

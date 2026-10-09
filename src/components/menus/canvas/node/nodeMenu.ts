@@ -6,13 +6,14 @@
  ************************************************************************/
 
 import {MenuItem, SIDE, Side} from "../../../types";
-import {positionSubmenu} from "../../../utils";
+import {openContextMenu, positionSubmenu} from "../../../utils";
 import "./nodeMenu.scss";
 
 type SaveNodeToLibrary = () => void;
 type ExportNode = () => void;
 type RemoveNode = () => void;
 type ChangeImage = () => void;
+type Rotate = (quarterTurns: number) => void;
 type GetLockedPorts = () => boolean;
 type SetLockedPorts = (lockedPorts: boolean) => void;
 type AddPortOnSide = (side: string, type: string) => void;
@@ -34,14 +35,22 @@ export const PORT_TYPE_NAME: Record<PortType, string> = {
     [PORT_TYPE.IO]: "IO",
 };
 
-type MenuKeys = AddPortMenuKey | "export_node" | "save_node_to_library" | "remove_node" | "change_image" | "lock_ports_relocation" | "unlock_ports_relocation";
+type MenuKeys = AddPortMenuKey | "export_node" | "save_node_to_library" | "remove_node" | "change_image" | "lock_ports_relocation" | "unlock_ports_relocation" | "rotate_clockwise" | "rotate_counterclockwise";
 
 type AddPortMenuKey = `${Side}_${PortType}`;
 
-export const nodeMenu = (addPortOnSide: AddPortOnSide, getLockedPorts: GetLockedPorts, setLockedPorts: SetLockedPorts, changeImage: ChangeImage, saveNodeToLibrary: SaveNodeToLibrary, exportNode: ExportNode, removeNode: RemoveNode) =>
+export const nodeMenu = (
+    addPortOnSide: AddPortOnSide,
+    getLockedPorts: GetLockedPorts,
+    setLockedPorts: SetLockedPorts,
+    rotate: Rotate,
+    changeImage: ChangeImage,
+    saveNodeToLibrary: SaveNodeToLibrary,
+    exportNode: ExportNode,
+    removeNode: RemoveNode
+) =>
     (x: number, y: number) => {
-        return $.contextMenu({
-            selector: "body",
+        return openContextMenu({
             events: {
                 hide: function () {
                     $.contextMenu("destroy");
@@ -54,6 +63,9 @@ export const nodeMenu = (addPortOnSide: AddPortOnSide, getLockedPorts: GetLocked
                     saveNodeToLibrary();
                 } else if (key === "export_node") {
                     exportNode();
+                } else if (key === "rotate_clockwise" || key === "rotate_counterclockwise") {
+                    // in quarter turns clockwise: three of them make one counterclockwise
+                    rotate(key === "rotate_clockwise" ? 1 : 3);
                 } else if (key === "change_image") {
                     changeImage();
                 } else if (key === "lock_ports_relocation" || key === "unlock_ports_relocation") {
@@ -138,6 +150,14 @@ const nodeMenuItems = (getLockedPorts: GetLockedPorts) => {
             },
         },
         ...lockUnlockPortsMenuItem,
+        rotate: {
+            name: "Rotate",
+            className: "context-menu-icon-rotate-clockwise",
+            items: {
+                rotate_clockwise: {name: "90° Clockwise", className: "context-menu-icon-rotate-clockwise"},
+                rotate_counterclockwise: {name: "90° Counterclockwise", className: "context-menu-icon-rotate-counterclockwise"},
+            },
+        },
         change_image: {
             name: "Change Image",
             className: "context-menu-icon-change-image",

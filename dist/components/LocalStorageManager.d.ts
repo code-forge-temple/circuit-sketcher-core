@@ -4,6 +4,7 @@
  *    Licensed under the GNU General Public License v3.0.               *
  *    See the LICENSE file in the project root for more information.    *
  ************************************************************************/
+import { Library } from './libraryTree';
 type Draw2dStringifiedNode = Record<string, any>;
 type LocalStorageData = {
     library: {
@@ -17,5 +18,10 @@ export declare class LocalStorageManager {
     static setLibrary(library: LocalStorageData["library"]): Promise<void>;
     static addItemToLibrary(key: string, value: Record<string, any> | undefined): Promise<void>;
     static removeItemFromLibrary(key: string): Promise<void>;
+    static exportLibrary(): Promise<Library>;
+    static importLibrary(data: unknown): Promise<{
+        added: number;
+        skipped: number;
+    }>;
 }
 export {};

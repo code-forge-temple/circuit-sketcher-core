@@ -26,6 +26,7 @@ export declare class CanvasManager extends ObserverCanvas {
     private openMenu;
     private constructor();
     private init;
+    private preventBrowserMenu;
     static setCanvasId(canvasId: string): typeof CanvasManager;
     static setOnChangeCallback(callback: () => void): typeof CanvasManager;
     static getInstance(): CanvasManager;
@@ -37,13 +38,15 @@ export declare class CanvasManager extends ObserverCanvas {
     private createNode;
     private addNodeToCanvas;
     private removeNodeFromLib;
-    private importLibrary;
+    private manageLibrary;
+    private libraryChanged;
     setNodeImage: (nodeId: string, imgSrc: string) => void;
     toJson: () => Promise<object[]>;
     toPng: () => Promise<string>;
     resize: () => void;
     stringify<T extends boolean | undefined>(sync?: T): T extends true ? string : Promise<string>;
     parse: (json: string) => void;
+    private load;
     protected getCanvas: () => any;
     protected onDragFinish: () => Promise<void>;
     protected onChange: (e: any) => Promise<void>;

@@ -6,6 +6,8 @@
  ************************************************************************/
 
 import {openDB} from 'idb';
+import {extractGroup, Library, mergeIntoLibrary, toExportFile} from './libraryTree';
+import {LibrarySchemaSchema} from './types';
 
 type Draw2dStringifiedNode = Record<string, any>;
 
@@ -77,5 +79,23 @@ export class LocalStorageManager {
         const db = await dbPromise;
 
         await db.delete(STORE_NAME, key);
+    }
+
+    /* The library as a file to share - what Manage Library's Export... on the library root writes:
+     * keyed by name, without "default" (that one is shared through circuit-sketcher-lib itself).
+     */
+    public static async exportLibrary (): Promise<Library> {
+        return toExportFile(extractGroup(await LocalStorageManager.getLibrary(), ""));
+    }
+
+    /* Merges a library or node file in, as Import... on the library root does: a name already taken
+     * gets a number, and nothing goes into "default". Throws if it isn't a library or node file.
+     */
+    public static async importLibrary (data: unknown): Promise<{added: number; skipped: number}> {
+        const {library, added, skipped} = mergeIntoLibrary(await LocalStorageManager.getLibrary(), LibrarySchemaSchema.parse(data));
+
+        await LocalStorageManager.setLibrary(library);
+
+        return {added: added.length, skipped};
     }
 }

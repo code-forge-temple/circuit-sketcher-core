@@ -30,6 +30,17 @@
     background-image: url('../../../../assets/lock.svg');
 }
 
+.context-menu-icon-rotate-clockwise>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/rotate-clockwise.svg');
+}
+
+.context-menu-icon-rotate-counterclockwise>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../../assets/rotate-clockwise.svg');
+    transform: scaleX(-1);
+}
+
 .context-menu-icon-export-node>span::before {
     @include mixins.context-menu-icon;
     background-image: url('../../../../assets/export.svg');

@@ -10,6 +10,7 @@ export declare const labelBasicProps: {
     fontFamily: string;
 };
 export declare const getNestedConstructorInstanceFromPath: (obj: any, path: string) => any;
+export declare const openContextMenu: (options: Record<string, any>) => void;
 export declare const positionSubmenu: (menu: any) => void;
 export declare const PORT_RELOCATION_OUTER_OFFSET = 40;
 export declare const isWithinVirtualBoundary: (figure: any, OFFSET: number, coords: Coords) => {

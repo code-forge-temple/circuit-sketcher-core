@@ -42,6 +42,7 @@ module.exports = {
   externals: {
     react: "react",
     "react-dom": "react-dom",
+    "react-dom/client": "react-dom/client",
   },
   output: {
     filename: "main.js",
