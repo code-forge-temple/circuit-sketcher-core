@@ -1,0 +1,94 @@
+# Builds circuit-sketcher-core and publishes the build as a git tag named after the package version.
+#
+# dist/ is not tracked on main: the plugin and the app install core from GitHub at a version tag
+# ("github:code-forge-temple/circuit-sketcher-core#semver:^x.y.z"), and that tag points to a commit
+# made here, on top of the pushed one, that adds the production build. A version that is already
+# tagged is not built again, so bump the version in package.json to release.
+
+name: Build and Tag
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "types/**"
+      - "webpack.config.js"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "src/**"
+      - "types/**"
+      - "webpack.config.js"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build
+
+      - name: Get package version
+        id: pkg_version
+        run: echo "VERSION=$(jq -r '.version' package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version is already tagged
+        id: tag_check
+        env:
+          VERSION: ${{ steps.pkg_version.outputs.VERSION }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION}" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Version ${VERSION} is already tagged - nothing to release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # pull requests only check that core lints and builds
+      - name: Commit the build and tag it
+        if: github.event_name != 'pull_request' && steps.tag_check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.pkg_version.outputs.VERSION }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --detach
+          git add --force dist
+          git commit -m "build ${VERSION}"
+          git tag "${VERSION}"
+          git push origin "refs/tags/${VERSION}"
+
+      - name: Create Release
+        if: github.event_name != 'pull_request' && steps.tag_check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.pkg_version.outputs.VERSION }}
+        run: |
+          gh release create "${VERSION}" --verify-tag --title "Release ${VERSION}" \
+            --notes "Built from ${GITHUB_SHA}. Install with \`github:code-forge-temple/circuit-sketcher-core#semver:^${VERSION}\`."
