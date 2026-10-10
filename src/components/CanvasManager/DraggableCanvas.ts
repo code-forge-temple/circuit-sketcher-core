@@ -529,6 +529,17 @@ export abstract class DraggableCanvas {
         this.gridShiftX += deltaX;
         this.gridShiftY += deltaY;
 
+        /* Each wire ends up exactly as it was, moved along. Moving the figures makes draw2d route their
+         * wires afresh, one end at a time and before the other figures have moved: that leaves the bends
+         * of hand-routed wires behind (diagonal segments) and reshapes routed ones - so the routes are
+         * taken first and put back once everything has moved.
+         */
+        const wires = canvas.getLines().asArray().map((line: any) => ({
+            line,
+            vertices: line.getVertices().asArray().map((vertex: any) => ({x: vertex.x + deltaX, y: vertex.y + deltaY})),
+            routing: line._routingMetaData ? {...line._routingMetaData} : null,
+        }));
+
         canvas.getFigures().each((_i:number, figure: any) => {
             figure.x += deltaX;
             figure.y += deltaY;
@@ -540,14 +551,23 @@ export abstract class DraggableCanvas {
             });
         });
 
-        canvas.getLines().each((_i:number, line: any) => {
-            line.lineSegments.each((_j:number, segment: any) => {
-                segment.start.x += deltaX;
-                segment.start.y += deltaY;
-            });
+        wires.forEach(({line, vertices, routing}: {line: any; vertices: {x: number; y: number}[]; routing: Record<string, any> | null}) => {
+            /* the ends exactly on the ports: the router realigns a wire whose end is off its port, and the
+             * moved vertex and the moved port can differ in the last digit */
+            const source = line.getSource?.()?.getAbsolutePosition();
+            const target = line.getTarget?.()?.getAbsolutePosition();
 
-            line.svgPathString = null; // Reset the path string to force a repaint of the line
-            line.repaint();
+            if (source && target && vertices.length > 1) {
+                vertices[0] = {x: source.x, y: source.y};
+                vertices[vertices.length - 1] = {x: target.x, y: target.y};
+            }
+
+            line.setVertices(vertices);
+
+            // setVertices marks a wire as routed by hand; a routed one stays routed
+            if (routing) {
+                line._routingMetaData = routing;
+            }
         });
     }
 }
