@@ -188,10 +188,6 @@ export class CanvasManager extends ObserverCanvas {
                 this.canvas.uninstallEditPolicy(policy);
             }
         });
-
-        this.canvas.on("zoom", (emitter:any, event:any) => {
-            console.log("Zoom level changed to:", event.value);
-        });
     }
 
     private createNode = (coords: Coords): void => {
