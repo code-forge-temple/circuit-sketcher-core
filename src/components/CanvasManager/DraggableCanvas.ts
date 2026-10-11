@@ -35,6 +35,8 @@ type Viewport = {
     height: number;
 };
 
+type Pointer = Pick<MouseEvent, "clientX" | "clientY" | "shiftKey" | "ctrlKey">;
+
 type ZoomInProgress = {
     // the zoom factor it started from (the circuit's own until the zoom is applied)
     from: number;
@@ -46,6 +48,19 @@ type ZoomInProgress = {
     width: number;
     height: number;
 };
+
+/* Every color in a css background image (as the browser reports it: rgb(r, g, b) or
+ * rgba(r, g, b, a)) with its alpha scaled by `fade` - the colors are all that change */
+const fadeColors = (image: string, fade: number): string =>
+    image.replace(/rgba?\(([^()]*)\)/g, (color, channels: string) => {
+        const [r, g, b, alpha = "1"] = channels.split(/[\s,/]+/).filter(Boolean);
+
+        if (b === undefined) return color;
+
+        const opacity = alpha.endsWith("%") ? parseFloat(alpha) / 100 : parseFloat(alpha);
+
+        return `rgba(${r}, ${g}, ${b}, ${opacity * fade})`;
+    });
 
 /* Panning is a rigid translation: every figure moves by the same delta, so no port,
  * route or label has to be recomputed - only the visible window over the scene changes.
@@ -70,10 +85,17 @@ export abstract class DraggableCanvas {
     private zoomSettleTimer: number | null = null;
     // the spacing of the canvas element's dotted background at 100% (set by the app's css), 0 if it has none
     private gridSize: number = 0;
+    // the app's css background image itself, faded from as the view zooms out
+    private gridImage: string = "";
     // how far pans and zooms have moved the circuit since the canvas was created, in canvas units
     private gridShiftX: number = 0;
     private gridShiftY: number = 0;
     private zoomControls: ZoomControls | null = null;
+    // the left button went down on the canvas and hasn't come up yet (a click, or a drag in progress)
+    private pressing: boolean = false;
+    private releaseWaiters: Array<() => void> = [];
+    // where the mouse last was, for a drag that ends with the window losing focus
+    private lastPointer: Pointer | null = null;
 
     protected abstract getCanvas (): any;
     protected abstract onDragFinish(): Promise<void>;
@@ -127,6 +149,9 @@ export abstract class DraggableCanvas {
         this.isDragging = false;
         this.zoomInProgress = null;
 
+        // nothing waits on a canvas that is gone
+        this.endPress();
+
         this.clearGrid();
 
         this.zoomControls?.remove();
@@ -145,6 +170,7 @@ export abstract class DraggableCanvas {
         const size = computed.backgroundImage !== "none" ? parseFloat(computed.backgroundSize) : NaN;
 
         this.gridSize = size > 0 ? size : 0;
+        this.gridImage = this.gridSize ? computed.backgroundImage : "";
         this.gridShiftX = 0;
         this.gridShiftY = 0;
     }
@@ -152,6 +178,7 @@ export abstract class DraggableCanvas {
     private clearGrid = () => {
         this.canvasElement.style.removeProperty("background-size");
         this.canvasElement.style.removeProperty("background-position");
+        this.canvasElement.style.removeProperty("background-image");
     }
 
     // originX/Y: where the viewBox starts, in canvas units; zoom: canvas units per screen pixel
@@ -163,6 +190,14 @@ export abstract class DraggableCanvas {
 
         this.canvasElement.style.backgroundSize = `${spacing}px ${spacing}px`;
         this.canvasElement.style.backgroundPosition = `${offset(this.gridShiftX, originX)}px ${offset(this.gridShiftY, originY)}px`;
+
+        /* zoomed out, the dots crowd together (zoom x zoom times as many) and drown the circuit,
+         * so they fade as they close in; zoomed in they keep the app's own color */
+        if (zoom > 1) {
+            this.canvasElement.style.backgroundImage = fadeColors(this.gridImage, 1 / zoom);
+        } else {
+            this.canvasElement.style.removeProperty("background-image");
+        }
     }
 
     private readViewport = (): Viewport => {
@@ -242,6 +277,12 @@ export abstract class DraggableCanvas {
     }
 
     private onMouseDown = (event: MouseEvent) => {
+        if (event.button === 0) {
+            this.pressing = true;
+
+            return;
+        }
+
         if (event.button !== 1) return; // Middle mouse button
 
         event.preventDefault();
@@ -264,6 +305,8 @@ export abstract class DraggableCanvas {
     }
 
     private onMouseMove = (event: MouseEvent) => {
+        this.lastPointer = event;
+
         if (!this.isDragging) return;
 
         /* accumulated from the origin rather than frame to frame, so coalescing
@@ -276,7 +319,15 @@ export abstract class DraggableCanvas {
         }
     }
 
+    // on the window, so it comes after draw2d's own mouseup on the canvas element has ended the drag
     private onMouseUp = (event: MouseEvent) => {
+        if (event.button === 0) {
+            this.releaseMissedByDraw2d(event);
+            this.endPress();
+
+            return;
+        }
+
         if (event.button !== 1) return; // Middle mouse button
 
         this.finishDrag();
@@ -285,7 +336,55 @@ export abstract class DraggableCanvas {
     /* releasing the button outside the document never fires a mouseup, and a pan left
      * unfinished would keep the canvas offset and non-interactive */
     private onWindowBlur = () => {
+        if (this.lastPointer) {
+            this.releaseMissedByDraw2d(this.lastPointer);
+        }
+
+        this.endPress();
         this.finishDrag();
+    }
+
+    /* draw2d hears the release only on the canvas element: let go over anything else (the zoom
+     * buttons, the app around the canvas, outside the window) and its drag never ends - what was
+     * dragged stays dimmed (and gets saved that way), and the next moves keep dragging it. This
+     * hands draw2d the release it missed; window listeners run after the element's, so it has
+     * already had its chance at the ones over the canvas.
+     */
+    private releaseMissedByDraw2d = (release: Pointer) => {
+        const canvas = this.getCanvas();
+
+        if (!canvas?.mouseDown) return;
+
+        canvas.html.triggerHandler({
+            type: "mouseup",
+            which: 1,
+            clientX: release.clientX,
+            clientY: release.clientY,
+            shiftKey: release.shiftKey,
+            ctrlKey: release.ctrlKey,
+        });
+    }
+
+    private endPress = () => {
+        this.pressing = false;
+
+        const waiters = this.releaseWaiters;
+
+        this.releaseWaiters = [];
+        waiters.forEach((resolve) => resolve());
+    }
+
+    /* Resolves once the left button is up (right away if it is). Work that resets the selection
+     * has to wait for it: draw2d gives a selected figure new handles then, and a handle swapped
+     * out while it is being dragged throws on release - which leaves draw2d's command stack
+     * stuck in a transaction, so that every later drag (a port's too) is left half done.
+     */
+    protected whenReleased = (): Promise<void> => {
+        if (!this.pressing) return Promise.resolve();
+
+        return new Promise((resolve) => {
+            this.releaseWaiters.push(resolve);
+        });
     }
 
     private finishDrag = () => {

@@ -70,3 +70,8 @@
     @include mixins.context-menu-icon;
     background-image: url('../../../assets/trash.svg');
 }
+
+.context-menu-icon-save-image>span::before {
+    @include mixins.context-menu-icon;
+    background-image: url('../../../assets/media-image-download.svg');
+}

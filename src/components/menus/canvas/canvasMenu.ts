@@ -24,8 +24,10 @@ type CreateNode = ({x, y}: {x: number, y: number}) => void;
 type AddNodeToCanvas = ({x, y, nodeJson}: {x: number, y: number, nodeJson: Record<string, any>}) => void;
 type RemoveNodeFromLib = (libKey: string) => void;
 type ManageLibrary = () => void;
+type SaveAsImage = () => void;
+type IsCanvasEmpty = () => boolean;
 
-type MenuKeys = "create_node" | "import_node";
+type MenuKeys = "create_node" | "import_node" | "save_as_image";
 type MenuItems = Record<string, any>;
 
 const LIBRARY_PAGE_SIZE = 15;
@@ -127,7 +129,7 @@ const libraryLevelItems = (level: LibraryTree, levelKeys: string[], componentIte
     };
 }
 
-export const canvasMenu = (createNode: CreateNode, addNodeToCanvas: AddNodeToCanvas, removeNodeFromLib: RemoveNodeFromLib, manageLibrary: ManageLibrary) =>
+export const canvasMenu = (createNode: CreateNode, addNodeToCanvas: AddNodeToCanvas, removeNodeFromLib: RemoveNodeFromLib, manageLibrary: ManageLibrary, saveAsImage: SaveAsImage, isCanvasEmpty: IsCanvasEmpty) =>
     async (x: number, y: number) => {
         const canvasArea = document.getElementById("circuit-board");
         const canvasAreaRect = canvasArea!.getBoundingClientRect();
@@ -221,6 +223,8 @@ export const canvasMenu = (createNode: CreateNode, addNodeToCanvas: AddNodeToCan
                             alert("Invalid node format");
                         }
                     });
+                } else if(key === "save_as_image") {
+                    saveAsImage();
                 }
             },
             x: x,
@@ -233,6 +237,12 @@ export const canvasMenu = (createNode: CreateNode, addNodeToCanvas: AddNodeToCan
                 import_node: {
                     name: "Import Node",
                     className: "context-menu-icon-import-node"
+                },
+                // the whole circuit, not just what is in sight
+                save_as_image: {
+                    name: "Save As Image",
+                    className: "context-menu-icon-save-image",
+                    disabled: isCanvasEmpty()
                 },
                 [LIBRARY_MENU_ITEM]: {
                     name: "Library...",

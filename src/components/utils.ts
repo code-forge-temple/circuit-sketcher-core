@@ -128,15 +128,15 @@ export const createConnection = function (sourcePort: any, targetPort: any) {
     return connection;
 };
 
-export const exportJsonFile = (nodeData: Record<string, any>, fileName: string) => {
+// hands the file to the browser to save (Obsidian asks where)
+const saveFile = (blob: Blob, fileName: string, extension: string) => {
     // eslint-disable-next-line no-control-regex
     const safeFileName = fileName.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_");
-    const blob = new Blob([JSON.stringify(nodeData, null, 4)], {type: "application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
 
     a.href = url;
-    a.download = `${safeFileName}.json`;
+    a.download = `${safeFileName}.${extension}`;
 
     document.body.appendChild(a);
 
@@ -145,6 +145,17 @@ export const exportJsonFile = (nodeData: Record<string, any>, fileName: string) 
     URL.revokeObjectURL(url);
 
     a.remove();
+}
+
+export const exportJsonFile = (nodeData: Record<string, any>, fileName: string) => {
+    saveFile(new Blob([JSON.stringify(nodeData, null, 4)], {type: "application/json"}), fileName, "json");
+}
+
+// a picture as a data: URL (what the png writer gives)
+export const exportPngFile = (dataUrl: string, fileName: string) => {
+    const bytes = Uint8Array.from(atob(dataUrl.slice(dataUrl.indexOf(",") + 1)), (char) => char.charCodeAt(0));
+
+    saveFile(new Blob([bytes], {type: "image/png"}), fileName, "png");
 }
 
 export const importJsonFile = () => {

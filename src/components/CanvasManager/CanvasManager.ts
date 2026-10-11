@@ -20,7 +20,7 @@ import "jquery-contextmenu";
 import {canvasMenu} from "../menus/canvas/canvasMenu";
 import {CustomBlock} from "../customDefinitions/customBlock";
 import "../menus/jquery-contextmenu.scss";
-import {createConnection, labelBasicProps} from "../utils";
+import {createConnection, exportPngFile, labelBasicProps} from "../utils";
 import draw2d from "draw2d";
 import {LocalStorageManager} from "../LocalStorageManager";
 import {DummyCommand} from "../customDefinitions/customCommands";
@@ -39,6 +39,24 @@ const IDENTITY_MATRIX = "matrix(1,0,0,1,0,0)";
  * existed log it as an unknown type, skip it, and open at 100%.
  */
 const VIEW_ENTRY_TYPE = "customDefinitions.CanvasView";
+
+// what "Save As Image" offers to call the picture (Obsidian lets you change it)
+const IMAGE_FILE_NAME = "circuit";
+
+/* draw2d dims whatever is being dragged until it is dropped, and nothing in a circuit is meant to be
+ * see-through - so a figure is always saved and opened opaque. A save during a drag, or after one
+ * that never ended, used to leave faded wires and blocks in a file for good.
+ */
+const opaque = (entry: any): any => {
+    if (!entry || typeof entry !== "object") return entry;
+
+    return {
+        ...entry,
+        ...(typeof entry.alpha === "number" ? {alpha: 1} : {}),
+        ...(Array.isArray(entry.ports) ? {ports: entry.ports.map(opaque)} : {}),
+        ...(Array.isArray(entry.labels) ? {labels: entry.labels.map(opaque)} : {}),
+    };
+};
 
 export class CanvasManager extends ObserverCanvas {
     private static instance: CanvasManager | null;
@@ -109,7 +127,16 @@ export class CanvasManager extends ObserverCanvas {
     }
 
     public loadCanvasMenu = () => {
-        this.openMenu = canvasMenu(this.createNode, this.addNodeToCanvas, this.removeNodeFromLib, this.manageLibrary);
+        this.openMenu = canvasMenu(this.createNode, this.addNodeToCanvas, this.removeNodeFromLib, this.manageLibrary, this.saveAsImage, this.isEmpty);
+    }
+
+    private isEmpty = (): boolean => this.canvas.getFigures().isEmpty();
+
+    // the same picture as the one embedded in notes: the whole circuit at 100%, whatever the view
+    private saveAsImage = () => {
+        this.toPng()
+            .then((png) => exportPngFile(png, IMAGE_FILE_NAME))
+            .catch((error: unknown) => console.error("Could not save the circuit as an image:", error));
     }
 
     public static destroy = () => {
@@ -253,16 +280,25 @@ export class CanvasManager extends ObserverCanvas {
      */
     public toJson = async (): Promise<object[]> => {
         return new Promise((resolve) => {
-            this.writer.marshal(this.canvas, (json: any) => {
+            this.writer.marshal(this.canvas, (json: any[]) => {
                 const zoom = this.getZoom();
+                const figures = json.map(opaque);
 
                 // a circuit at 100% is saved exactly as before the zoom existed
-                resolve(Math.abs(zoom - 1) > 1e-6 ? [...json, {type: VIEW_ENTRY_TYPE, zoom}] : json);
+                resolve(Math.abs(zoom - 1) > 1e-6 ? [...figures, {type: VIEW_ENTRY_TYPE, zoom}] : figures);
             });
         });
     }
 
     public toPng = async (): Promise<string> => {
+        /* the writer resets the selection (see below), which mustn't happen under a drag - a save
+         * can ask for the image while a figure or a wire's handle is still being dragged */
+        await this.whenReleased();
+
+        if (CanvasManager.instance !== this) {
+            throw new Error("the circuit was closed before its image was made");
+        }
+
         return new Promise((resolve, reject) => {
             try {
                 const writer = new draw2d.io.png.Writer();
@@ -393,7 +429,7 @@ export class CanvasManager extends ObserverCanvas {
     private load = (entries: any[]) => {
         const view = entries.find((entry) => entry?.type === VIEW_ENTRY_TYPE);
 
-        this.reader.unmarshal(this.canvas, entries.filter((entry) => entry?.type !== VIEW_ENTRY_TYPE));
+        this.reader.unmarshal(this.canvas, entries.filter((entry) => entry?.type !== VIEW_ENTRY_TYPE).map(opaque));
 
         this.restoreZoom(view?.zoom ?? 1);
     }
