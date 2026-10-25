@@ -12,7 +12,8 @@ const ICON = (shape: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${s
 const ICONS = {
     zoomIn: ICON(`<path d="M6 12H18M12 6V18"/>`),
     zoomOut: ICON(`<path d="M6 12H18"/>`),
-    reset: ICON(`<rect x="5" y="5" width="14" height="14" rx="1.5"/>`),
+    // four corners, like the "zoom to fit" of Obsidian's canvas (Lucide's maximize)
+    reset: ICON(`<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>`),
 };
 
 export type ZoomActions = {
